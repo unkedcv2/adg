@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" fill="none">
+  <!-- Left Leaf -->
+  <path
+    d="M 50 50 C 200 230, 440 320, 440 482 L 440 752 L 50 401 Z"
+    fill="#044524"
+  />
+  <!-- Right Leaf -->
+  <path
+    d="M 950 50 C 800 230, 560 320, 560 482 L 560 752 L 950 401 Z"
+    fill="#044524"
+  />
+  <!-- Left Bottom Cup/Shield -->
+  <path
+    d="M 50 572 L 440 923 L 500 950 C 250 950, 50 815, 50 572 Z"
+    fill="#1e1e1c"
+  />
+  <!-- Right Bottom Cup/Shield -->
+  <path
+    d="M 950 572 L 560 923 L 500 950 C 750 950, 950 815, 950 572 Z"
+    fill="#1e1e1c"
+  />
+</svg>

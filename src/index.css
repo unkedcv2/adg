@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-green: #044524;
+  --color-brand-green-light: #155d34;
+  --color-brand-green-dark: #072a16;
+  --color-brand-green-pale: #f0f6f2;
+  --color-brand-gold: #c29938;
+  --color-brand-gold-light: #dfb249;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar matching the green theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #044524;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #155d34;
+}
+
+/* Scroll padding for fixed header and mobile bottom navigation */
+html {
+  scroll-padding-top: 80px;
+  scroll-padding-bottom: 85px;
+}
+
+/* Print Specific Rules for Cotización PDF Export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide everything on page during print */
+  #canje-simulator-page,
+  header,
+  footer,
+  aside,
+  nav,
+  .no-print,
+  #canje-floating-trigger-container {
+    display: none !important;
+  }
+
+  /* Only show the printable quotation sheet */
+  #canje-export-modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  #canje-export-modal-overlay > div {
+    border: none !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #printable-canje-quote {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}
+

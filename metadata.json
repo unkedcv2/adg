@@ -1,0 +1,8 @@
+{
+  "name": "Remix ADG Almacén de Granos S.A.",
+  "description": "Soluciones integrales para el productor agropecuario. Respaldada por la trayectoria de Monasterio Tattersall y PGL.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
