@@ -7,21 +7,47 @@ import React from 'react';
 import { TrigoIcon } from './GrainIcons';
 
 interface CanjeFloatingTriggerProps {
-  onOpenSimulator: () => void;
+  onOpenSimulator?: () => void;
 }
 
 export default function CanjeFloatingTrigger({ onOpenSimulator }: CanjeFloatingTriggerProps) {
+  const handleOpenInNewWindow = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.origin}/simulador`;
+      try {
+        const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+        // If browser blocked popup (e.g. strict iframe settings), fallback smoothly
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          if (onOpenSimulator) {
+            e.preventDefault();
+            onOpenSimulator();
+          }
+        } else {
+          e.preventDefault();
+        }
+      } catch {
+        if (onOpenSimulator) {
+          e.preventDefault();
+          onOpenSimulator();
+        }
+      }
+    }
+  };
+
   return (
     <aside
       id="canje-floating-trigger-container"
       aria-label="Acceso al Simulador de Canje de Granos"
       className="fixed z-40 font-sans top-[96px] sm:top-[104px] lg:top-[108px] right-3 sm:right-6 lg:right-8 xl:right-12 2xl:right-[calc((100vw-1280px)/2+36px)] select-none"
     >
-      <button
+      <a
         id="canje-btn-circular-trigo"
-        onClick={onOpenSimulator}
-        className="group relative flex items-center justify-center p-0 bg-transparent focus:outline-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"
-        title="Abrir Simulador de Canje de Granos"
+        href="/simulador"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleOpenInNewWindow}
+        className="group relative flex items-center justify-center p-0 bg-transparent focus:outline-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 text-inherit no-underline"
+        title="Abrir Simulador de Canje de Granos en una nueva ventana"
       >
         {/* Pulsating heartbeat rings ('efecto latido') to subtly catch attention */}
         <span className="absolute inset-[22px] sm:inset-[25px] rounded-full bg-brand-green/25 animate-ping pointer-events-none opacity-80" />
@@ -74,7 +100,7 @@ export default function CanjeFloatingTrigger({ onOpenSimulator }: CanjeFloatingT
           </div>
 
         </div>
-      </button>
+      </a>
     </aside>
   );
 }

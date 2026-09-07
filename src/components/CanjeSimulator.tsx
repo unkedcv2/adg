@@ -138,10 +138,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             <button
               id="back-to-landing-btn"
               onClick={onBackToLanding || (() => window.location.href = '/')}
-              className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:text-brand-green hover:border-brand-green/30 hover:bg-brand-green-pale/40 transition-colors text-xs sm:text-sm font-semibold active:scale-95 shrink-0"
+              className="group flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-brand-green/20 bg-white text-gray-700 hover:text-brand-green hover:border-brand-green hover:bg-brand-green-pale/50 transition-all text-xs sm:text-sm font-semibold active:scale-95 shrink-0 shadow-2xs"
               title="Volver a la página principal de ADG"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 text-brand-green animate-arrow-back group-hover:-translate-x-1 transition-transform" />
               <span className="hidden sm:inline">Volver a ADG</span>
               <span className="sm:hidden">Volver</span>
             </button>
