@@ -228,11 +228,11 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                         : 'bg-white text-gray-700 border-gray-200 hover:border-brand-green/40 hover:bg-gray-50 shadow-2xs'
                     }`}
                   >
-                    <div className={`p-1.5 rounded-lg shrink-0 ${isSelected ? 'bg-white/20 text-brand-gold-light' : 'bg-brand-green-pale text-brand-green'}`}>
+                    <div className={`p-1 sm:p-1.5 rounded-lg shrink-0 flex items-center justify-center ${isSelected ? 'bg-white/20 text-brand-gold-light' : 'bg-brand-green-pale text-brand-green'}`}>
                       <GrainIcon
                         type={grain.name}
-                        className="w-5 h-5 sm:w-6 sm:h-6"
-                        strokeWidth={1.3}
+                        className="w-7 h-7 sm:w-8 sm:h-8"
+                        strokeWidth={1.35}
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -375,8 +375,8 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                   {selectedGrain && (
                     <div className="mt-2.5 flex items-center justify-between px-3.5 py-2 rounded-xl bg-white/10 text-xs text-white border border-white/15">
                       <div className="flex items-center space-x-2.5 min-w-0">
-                        <div className="p-1 rounded-lg bg-white/20 text-brand-gold-light shrink-0">
-                          <GrainIcon type={selectedGrain.name} className="w-5 h-5" strokeWidth={1.3} />
+                        <div className="p-1.5 rounded-lg bg-white/20 text-brand-gold-light shrink-0 flex items-center justify-center">
+                          <GrainIcon type={selectedGrain.name} className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.35} />
                         </div>
                         <div className="min-w-0">
                           <span className="font-extrabold uppercase tracking-wide block truncate">{selectedGrain.name}</span>

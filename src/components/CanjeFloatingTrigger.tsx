@@ -10,16 +10,28 @@ interface CanjeFloatingTriggerProps {
   onOpenSimulator?: () => void;
 }
 
-export default function CanjeFloatingTrigger({}: CanjeFloatingTriggerProps = {}) {
+export default function CanjeFloatingTrigger({ onOpenSimulator }: CanjeFloatingTriggerProps = {}) {
   const handleOpenInNewWindow = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (typeof window !== 'undefined') {
-      // Clean base URL without any previous parameters or hash
-      const baseUrl = window.location.href.split('#')[0].split('?')[0];
-      const targetUrl = `${baseUrl}#simulador`;
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      try {
+        const baseUrl = window.location.href.split('#')[0].split('?')[0];
+        const targetUrl = `${baseUrl}#simulador`;
+        const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Fallback for sandboxed environments / popup blockers
+          if (onOpenSimulator) {
+            onOpenSimulator();
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully in strict iframe sandboxes (such as AI Studio preview)
+        if (onOpenSimulator) {
+          onOpenSimulator();
+        }
+      }
     }
   };
 
@@ -36,7 +48,7 @@ export default function CanjeFloatingTrigger({}: CanjeFloatingTriggerProps = {})
         rel="noopener noreferrer"
         onClick={handleOpenInNewWindow}
         className="group relative flex items-center justify-center p-0 bg-transparent focus:outline-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 text-inherit no-underline"
-        title="Abrir Simulador de Canje de Granos en una nueva pestaña"
+        title="Abrir Simulador de Canje de Granos"
       >
         {/* Pulsating heartbeat rings ('efecto latido') to subtly catch attention */}
         <span className="absolute inset-[22px] sm:inset-[25px] rounded-full bg-brand-green/25 animate-ping pointer-events-none opacity-80" />
