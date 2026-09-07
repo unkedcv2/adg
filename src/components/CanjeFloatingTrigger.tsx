@@ -16,9 +16,9 @@ export default function CanjeFloatingTrigger({}: CanjeFloatingTriggerProps = {})
     e.stopPropagation();
 
     if (typeof window !== 'undefined') {
-      // Build safe URL that works seamlessly across all hosting environments, subdomains, and preview windows without 404
+      // Clean base URL without any previous parameters or hash
       const baseUrl = window.location.href.split('#')[0].split('?')[0];
-      const targetUrl = `${baseUrl}?page=simulador#simulador`;
+      const targetUrl = `${baseUrl}#simulador`;
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
   };
@@ -31,12 +31,12 @@ export default function CanjeFloatingTrigger({}: CanjeFloatingTriggerProps = {})
     >
       <a
         id="canje-btn-circular-trigo"
-        href="?page=simulador#simulador"
+        href="#simulador"
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleOpenInNewWindow}
         className="group relative flex items-center justify-center p-0 bg-transparent focus:outline-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 text-inherit no-underline"
-        title="Abrir Simulador de Canje de Granos en una nueva ventana"
+        title="Abrir Simulador de Canje de Granos en una nueva pestaña"
       >
         {/* Pulsating heartbeat rings ('efecto latido') to subtly catch attention */}
         <span className="absolute inset-[22px] sm:inset-[25px] rounded-full bg-brand-green/25 animate-ping pointer-events-none opacity-80" />

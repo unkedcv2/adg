@@ -137,8 +137,15 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               id="back-to-landing-btn"
-              onClick={onBackToLanding || (() => window.location.href = '/')}
-              className="group flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-brand-green/20 bg-white text-gray-700 hover:text-brand-green hover:border-brand-green hover:bg-brand-green-pale/50 transition-all text-xs sm:text-sm font-semibold active:scale-95 shrink-0 shadow-2xs"
+              onClick={() => {
+                if (onBackToLanding) {
+                  onBackToLanding();
+                } else if (typeof window !== 'undefined') {
+                  const baseUrl = window.location.href.split('#')[0].split('?')[0];
+                  window.location.href = baseUrl;
+                }
+              }}
+              className="group flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-brand-green/20 bg-white text-gray-700 hover:text-brand-green hover:border-brand-green hover:bg-brand-green-pale/50 transition-all text-xs sm:text-sm font-semibold active:scale-95 shrink-0 shadow-2xs cursor-pointer"
               title="Volver a la página principal de ADG"
             >
               <ArrowLeft className="w-4 h-4 text-brand-green animate-arrow-back group-hover:-translate-x-1 transition-transform" />
@@ -147,14 +154,17 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             </button>
 
             <a 
-              href="/" 
+              href="#" 
               onClick={(e) => {
+                e.preventDefault();
                 if (onBackToLanding) {
-                  e.preventDefault();
                   onBackToLanding();
+                } else if (typeof window !== 'undefined') {
+                  const baseUrl = window.location.href.split('#')[0].split('?')[0];
+                  window.location.href = baseUrl;
                 }
               }}
-              className="flex items-center group shrink-0"
+              className="flex items-center group shrink-0 cursor-pointer"
             >
               <Logo lightBg={true} height={38} />
             </a>
