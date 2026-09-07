@@ -34,7 +34,15 @@ export default function App() {
       const path = window.location.pathname;
       const search = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
-      if (path === '/simulador' || search.get('page') === 'simulador' || hash === '#simulador') {
+      if (
+        path === '/simulador' ||
+        path.endsWith('/simulador') ||
+        search.get('page') === 'simulador' ||
+        search.get('view') === 'simulador' ||
+        hash === '#simulador' ||
+        hash === '#/simulador' ||
+        hash.includes('simulador')
+      ) {
         return 'simulador';
       }
     }
@@ -44,35 +52,48 @@ export default function App() {
   // Pluviómetro preservado en código (oculto de la visualización actual por pedido del cliente)
   const [isRainOpen, setIsRainOpen] = useState(false);
 
-  // Synchronize browser history / back-forward navigation
+  // Synchronize browser history / back-forward navigation & hash changes
   useEffect(() => {
-    const handlePopState = () => {
+    const handleUrlChange = () => {
       const path = window.location.pathname;
       const search = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
-      if (path === '/simulador' || search.get('page') === 'simulador' || hash === '#simulador') {
+      if (
+        path === '/simulador' ||
+        path.endsWith('/simulador') ||
+        search.get('page') === 'simulador' ||
+        search.get('view') === 'simulador' ||
+        hash === '#simulador' ||
+        hash === '#/simulador' ||
+        hash.includes('simulador')
+      ) {
         setCurrentPage('simulador');
       } else {
         setCurrentPage('landing');
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
   }, []);
 
   const goToSimulator = () => {
     setCurrentPage('simulador');
     if (window.location.pathname !== '/simulador') {
-      window.history.pushState({}, '', '/simulador');
+      window.history.pushState({}, '', '?page=simulador#simulador');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goToLanding = () => {
     setCurrentPage('landing');
-    if (window.location.pathname !== '/') {
-      window.history.pushState({}, '', '/');
+    if (typeof window !== 'undefined') {
+      const baseUrl = window.location.href.split('?')[0].split('#')[0];
+      window.history.pushState({}, '', baseUrl);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

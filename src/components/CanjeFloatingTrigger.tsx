@@ -10,27 +10,16 @@ interface CanjeFloatingTriggerProps {
   onOpenSimulator?: () => void;
 }
 
-export default function CanjeFloatingTrigger({ onOpenSimulator }: CanjeFloatingTriggerProps) {
+export default function CanjeFloatingTrigger({}: CanjeFloatingTriggerProps = {}) {
   const handleOpenInNewWindow = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/simulador`;
-      try {
-        const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-        // If browser blocked popup (e.g. strict iframe settings), fallback smoothly
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-          if (onOpenSimulator) {
-            e.preventDefault();
-            onOpenSimulator();
-          }
-        } else {
-          e.preventDefault();
-        }
-      } catch {
-        if (onOpenSimulator) {
-          e.preventDefault();
-          onOpenSimulator();
-        }
-      }
+      // Build safe URL that works seamlessly across all hosting environments, subdomains, and preview windows without 404
+      const baseUrl = window.location.href.split('#')[0].split('?')[0];
+      const targetUrl = `${baseUrl}?page=simulador#simulador`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -42,7 +31,7 @@ export default function CanjeFloatingTrigger({ onOpenSimulator }: CanjeFloatingT
     >
       <a
         id="canje-btn-circular-trigo"
-        href="/simulador"
+        href="?page=simulador#simulador"
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleOpenInNewWindow}
