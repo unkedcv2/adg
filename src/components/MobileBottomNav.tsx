@@ -6,10 +6,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Home,
-  Users,
   Layers,
   Warehouse,
-  MessageSquare
+  MessageSquare,
+  Calculator
 } from 'lucide-react';
 
 interface MobileBottomNavProps {
@@ -18,9 +18,10 @@ interface MobileBottomNavProps {
   isRainOpen?: boolean;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onOpenSimulator?: () => void;
 }
 
-export default function MobileBottomNav({}: MobileBottomNavProps = {}) {
+export default function MobileBottomNav({ onOpenSimulator }: MobileBottomNavProps = {}) {
   const [activeSection, setActiveSection] = useState('inicio');
 
   // Track active section on scroll
@@ -76,17 +77,17 @@ export default function MobileBottomNav({}: MobileBottomNavProps = {}) {
       icon: Home,
     },
     {
-      id: 'quienes-somos',
-      targetId: 'quienes-somos',
-      label: 'Nosotros',
-      icon: Users,
-    },
-    {
       id: 'servicios',
       targetId: 'servicios',
       label: 'Servicios',
       icon: Layers,
-      highlighted: true, // Central destacado en el medio
+    },
+    {
+      id: 'simulador',
+      targetId: 'simulador',
+      label: 'Simulador',
+      icon: Calculator,
+      highlighted: true, // Central destacado como BOTÓN PRINCIPAL
     },
     {
       id: 'infraestructura',
@@ -121,14 +122,20 @@ export default function MobileBottomNav({}: MobileBottomNavProps = {}) {
               <button
                 key={item.id}
                 id={`mobile-tab-${item.id}`}
-                onClick={() => scrollToSection(target)}
-                className="flex flex-col items-center justify-center flex-1 -mt-5 group active:scale-95 transition-transform"
+                onClick={() => {
+                  if (item.id === 'simulador' && onOpenSimulator) {
+                    onOpenSimulator();
+                  } else {
+                    scrollToSection(target);
+                  }
+                }}
+                className="flex flex-col items-center justify-center flex-1 -mt-5 group active:scale-95 transition-transform cursor-pointer"
                 title={item.label}
               >
-                <div className="w-12 h-12 rounded-full bg-brand-green text-white shadow-[0_4px_16px_rgba(4,69,36,0.35)] border-2 border-white flex items-center justify-center transition-transform group-hover:scale-105">
-                  <Icon className="w-6 h-6 stroke-[2.2]" />
+                <div className="w-13 h-13 rounded-full bg-brand-green-dark text-white shadow-[0_6px_20px_rgba(7,42,22,0.45)] border-[3px] border-white flex items-center justify-center transition-transform group-hover:scale-105 ring-2 ring-brand-green/20">
+                  <Icon className="w-6 h-6 stroke-[2.2] text-brand-gold-light" />
                 </div>
-                <span className="text-[10px] mt-1 font-extrabold text-brand-green tracking-tight">
+                <span className="text-[10px] sm:text-[11px] mt-1 font-black text-brand-green-dark tracking-tight uppercase">
                   {item.label}
                 </span>
               </button>

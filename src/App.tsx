@@ -163,7 +163,7 @@ export default function App() {
       */}
 
       {/* Mobile App Bottom Navigation Bar */}
-      <MobileBottomNav />
+      <MobileBottomNav onOpenSimulator={goToSimulator} />
 
     </div>
   );

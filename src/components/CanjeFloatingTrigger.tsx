@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { TrigoIcon } from './GrainIcons';
+import { Calculator } from 'lucide-react';
 
 interface CanjeFloatingTriggerProps {
   onOpenSimulator?: () => void;
@@ -87,14 +87,13 @@ export default function CanjeFloatingTrigger({ onOpenSimulator }: CanjeFloatingT
             </text>
           </svg>
 
-          {/* Inner Circle: Container solely for the Trigo Icon with Negative Hover State */}
+          {/* Inner Circle: Container solely for the Calculator Icon with Negative Hover State */}
           <div className="absolute inset-[24px] sm:inset-[27px] rounded-full bg-white group-hover:bg-brand-green border-2 border-brand-green/25 group-hover:border-white shadow-[0_6px_18px_rgba(21,93,52,0.22)] group-hover:shadow-[0_10px_26px_rgba(21,93,52,0.4)] flex items-center justify-center transition-all duration-300 overflow-hidden z-10">
             
-            {/* Wheat / Trigo Icon: Green on white -> Pure White on Green in Negative Hover */}
+            {/* Calculator Icon: Green on white -> Pure White on Green in Negative Hover */}
             <div className="text-brand-green group-hover:text-white group-hover:scale-110 transition-all duration-300 flex items-center justify-center">
-              <TrigoIcon
-                className="w-7 h-7 sm:w-8 sm:h-8"
-                strokeWidth={1.5}
+              <Calculator
+                className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.2]"
               />
             </div>
 

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Calculator } from 'lucide-react';
 import Logo from './Logo';
 
 interface HeaderProps {
@@ -13,7 +13,7 @@ interface HeaderProps {
   onOpenSimulator?: () => void;
 }
 
-export default function Header({}: HeaderProps = {}) {
+export default function Header({ onOpenSimulator }: HeaderProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('inicio');
 
@@ -78,7 +78,7 @@ export default function Header({}: HeaderProps = {}) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center lg:justify-between">
           
-          {/* Logo ADG (Centered on mobile, left-aligned on desktop) */}
+          {/* Logo ADG */}
           <a
             id="logo-link"
             href="#inicio"
@@ -95,7 +95,7 @@ export default function Header({}: HeaderProps = {}) {
           </a>
 
           {/* Desktop Navigation */}
-          <nav id="desktop-nav" className="hidden lg:flex items-center space-x-4">
+          <nav id="desktop-nav" className="hidden lg:flex items-center space-x-3 xl:space-x-4">
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
               return (
@@ -104,7 +104,7 @@ export default function Header({}: HeaderProps = {}) {
                   id={`nav-${item.id}`}
                   href={item.href}
                   onClick={(e) => handleNavClick(e, item.href)}
-                  className={`text-sm font-semibold px-4 py-2.5 rounded-full transition-all duration-500 ease-in-out hover:scale-[1.04] active:scale-95 ${
+                  className={`text-sm font-semibold px-3.5 xl:px-4 py-2.5 rounded-full transition-all duration-500 ease-in-out hover:scale-[1.04] active:scale-95 ${
                     isScrolled
                       ? isActive
                         ? 'text-white bg-white/15 shadow-[0_3px_12px_-4px_rgba(255,255,255,0.15)] border border-white/20'
@@ -119,12 +119,28 @@ export default function Header({}: HeaderProps = {}) {
               );
             })}
 
+            {/* Botón Simulador: Activado y destacado en color verde oscuro con letras blancas */}
+            <button
+              id="header-nav-simulador-btn"
+              type="button"
+              onClick={onOpenSimulator}
+              className={`flex items-center space-x-1.5 px-4 xl:px-5 py-2.5 rounded-full text-xs xl:text-sm font-extrabold uppercase tracking-wide transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 shadow-md cursor-pointer ${
+                isScrolled
+                  ? 'bg-[#052212] text-white border border-emerald-400/30 ring-1 ring-white/20 hover:bg-white hover:text-brand-green-dark'
+                  : 'bg-brand-green-dark text-white border border-brand-green-dark/30 hover:bg-brand-green hover:shadow-lg ring-1 ring-brand-green/20'
+              }`}
+              title="Abrir Simulador de Canje de Granos"
+            >
+              <Calculator className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-brand-gold-light shrink-0" />
+              <span>Simulador</span>
+            </button>
+
             {/* Clients access action button */}
             <a
               id="header-client-access-btn"
               href="#acceso-clientes"
               onClick={(e) => handleNavClick(e, '#acceso-clientes')}
-              className={`flex items-center space-x-1.5 px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-500 ease-in-out border hover:scale-105 active:scale-95 hover:shadow-md ${
+              className={`flex items-center space-x-1.5 px-4 xl:px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-500 ease-in-out border hover:scale-105 active:scale-95 hover:shadow-md ${
                 isScrolled
                   ? activeSection === 'acceso-clientes'
                     ? 'bg-white text-brand-green-dark border-white shadow-sm'
