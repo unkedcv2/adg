@@ -419,7 +419,7 @@ export function calculateCanjeExactExcel(
 
   // 4. DESGLOSE VENTA NORMAL (Columna D)
   const ventaRetIva = baseRetencionIva * alicuotaRetIvaVenta; // D23
-  const ventaRetGanancias = precio * alicuotaRetGananciasVenta; // D24
+  const ventaRetGanancias = Math.max(0, precio - comisionMonto - selladoMonto - fleteMonto) * alicuotaRetGananciasVenta; // D24
 
   // Dep CBU IVA: = +(D19 + D21 + D27) + D23 (en el Excel D21, D27, D23 son negativos)
   // Es decir: (ivaCerealMonto - ivaComisionMonto - ivaFleteMonto) - ventaRetIva
