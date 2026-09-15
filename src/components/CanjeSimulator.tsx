@@ -508,7 +508,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               >
                 {config.grains.map((g) => (
                   <option key={g.id} value={g.id} className="py-2 font-bold text-gray-900 uppercase">
-                    {g.name} ({g.category})
+                    {g.name}
                   </option>
                 ))}
               </select>

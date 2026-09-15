@@ -136,16 +136,16 @@ export const INITIAL_GRAINS: GrainItem[] = [
     badgeColor: "orange"
   },
   {
-    id: "sorgo",
-    name: "SORGO",
-    shortName: "Sorgo",
-    category: "cereal",
+    id: "girasol",
+    name: "GIRASOL",
+    shortName: "Girasol",
+    category: "oleaginosa",
     prices: {
-      rosarioARS: 245000,
-      bahiaARS: 240000,
-      precioUSD: 163.44
+      rosarioARS: 465000,
+      bahiaARS: 460000,
+      precioUSD: 310.21
     },
-    badgeColor: "red"
+    badgeColor: "yellow"
   },
   {
     id: "cebada",
@@ -158,30 +158,6 @@ export const INITIAL_GRAINS: GrainItem[] = [
       precioUSD: 205.57
     },
     badgeColor: "sky"
-  },
-  {
-    id: "arveja_verde",
-    name: "ARVEJA VERDE",
-    shortName: "Arveja Verde",
-    category: "oleaginosa",
-    prices: {
-      rosarioARS: 480000,
-      bahiaARS: 475000,
-      precioUSD: 318.30
-    },
-    badgeColor: "green"
-  },
-  {
-    id: "mani",
-    name: "MANÍ",
-    shortName: "Maní",
-    category: "oleaginosa",
-    prices: {
-      rosarioARS: 890000,
-      bahiaARS: 885000,
-      precioUSD: 590.18
-    },
-    badgeColor: "stone"
   }
 ];
 
@@ -494,7 +470,7 @@ export function calculateCanjeExactExcel(
 // PERSISTENCIA LOCAL (Configuracion y Pizarras personalizadas)
 // -------------------------------------------------------------
 
-const STORAGE_KEY = 'adg_canje_excel_config_v3';
+const STORAGE_KEY = 'adg_canje_excel_config_v5';
 
 export function loadStoredCanjeConfig(): CanjeConfigData {
   if (typeof window === 'undefined') return DEFAULT_CANJE_CONFIG;
@@ -502,10 +478,16 @@ export function loadStoredCanjeConfig(): CanjeConfigData {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_CANJE_CONFIG;
     const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.grains) && parsed.grains.length >= 8 && parsed.dolarBNA) {
+    if (parsed && Array.isArray(parsed.grains) && parsed.dolarBNA) {
+      // Garantizar que solo existan los 5 granos oficiales requeridos
+      const sanitizedGrains = INITIAL_GRAINS.map((defGrain) => {
+        const found = parsed.grains.find((g: any) => g && g.id === defGrain.id);
+        return found ? { ...defGrain, prices: { ...defGrain.prices, ...found.prices } } : defGrain;
+      });
       return {
         ...DEFAULT_CANJE_CONFIG,
         ...parsed,
+        grains: sanitizedGrains,
         parametros: {
           ...PARAMETROS_EXCEL,
           ...(parsed.parametros || {})
