@@ -96,7 +96,7 @@ export const SISA_OPTIONS: SisaScoreOption[] = [
   }
 ];
 
-export const TOP_GRAIN_IDS = ['soja', 'maiz', 'trigo', 'girasol'];
+export const TOP_GRAIN_IDS = ['soja', 'maiz', 'trigo'];
 
 export const INITIAL_GRAINS: GrainItem[] = [
   {
@@ -107,7 +107,7 @@ export const INITIAL_GRAINS: GrainItem[] = [
     prices: {
       rosarioARS: 520000,
       bahiaARS: 518000,
-      precioUSD: 344.82
+      precioUSD: 346.90
     },
     badgeColor: "emerald"
   },
@@ -119,7 +119,7 @@ export const INITIAL_GRAINS: GrainItem[] = [
     prices: {
       rosarioARS: 285560,
       bahiaARS: 288000,
-      precioUSD: 189.36
+      precioUSD: 190.50
     },
     badgeColor: "amber"
   },
@@ -131,21 +131,9 @@ export const INITIAL_GRAINS: GrainItem[] = [
     prices: {
       rosarioARS: 350000,
       bahiaARS: 345000,
-      precioUSD: 232.09
+      precioUSD: 233.49
     },
     badgeColor: "orange"
-  },
-  {
-    id: "girasol",
-    name: "GIRASOL",
-    shortName: "Girasol",
-    category: "oleaginosa",
-    prices: {
-      rosarioARS: 390000,
-      bahiaARS: 395000,
-      precioUSD: 258.62
-    },
-    badgeColor: "yellow"
   },
   {
     id: "sorgo",
@@ -155,7 +143,7 @@ export const INITIAL_GRAINS: GrainItem[] = [
     prices: {
       rosarioARS: 245000,
       bahiaARS: 240000,
-      precioUSD: 162.46
+      precioUSD: 163.44
     },
     badgeColor: "red"
   },
@@ -211,7 +199,7 @@ export const DEFAULT_CANJE_CONFIG: CanjeConfigData = {
     compra: 1499,
     venta: 1508,
     fecha: "09/09/2026",
-    fuente: "Banco Nación"
+    fuente: "Banco Nación (Divisa Compra)"
   },
   grains: INITIAL_GRAINS,
   sisaOptions: SISA_OPTIONS,
@@ -238,7 +226,7 @@ export async function fetchLiveDolarBNA(): Promise<DolarBNA | null> {
         compra: Number(data.compra) || 1499,
         venta: Number(data.venta) || 1508,
         fecha: fechaStr,
-        fuente: "Dólar Banco Nación (Oficial)"
+        fuente: "Banco Nación (Divisa Compra)"
       };
     }
   } catch (err) {
@@ -302,7 +290,7 @@ export interface CanjeCalculationInput {
   correspondeIibbBsAs: boolean; // Si / No
   retencionIvaManualSisa3?: number; // % manual (ej: 8 para 8%)
   retencionGananciasManualSisa3?: number; // % manual (ej: 15 para 15%)
-  kilometrosFlete: number; // km (0 si no aplica)
+  kilometrosFlete?: number; // km (eliminado de la fórmula)
   granoNombre?: string;
   plazaSeleccionada?: PlazaMercado;
 }
@@ -334,7 +322,8 @@ export interface CanjeDetailedResult {
 }
 
 /**
- * Ejecuta el calculo comparativo replicando celda por celda la hoja "Simulador" del Excel.
+ * Ejecuta el calculo comparativo replicando celda por celda la hoja "Simulador" del Excel,
+ * excluyendo flete de las fórmulas según solicitud comercial.
  */
 export function calculateCanjeExactExcel(
   input: CanjeCalculationInput,
@@ -344,22 +333,27 @@ export function calculateCanjeExactExcel(
   const precio = Math.max(0, input.precioPorTonelada || 0);
   const sisa = input.sisaScore || 2;
   const iibbAplica = Boolean(input.correspondeIibbBsAs);
-  const km = Math.max(0, input.kilometrosFlete || 0);
 
-  // 1. Tarifa de flete segun kilometros (Hoja 'Tarifas de Flete')
-  const fleteInfo = getFreightRate(km);
-  const fleteMonto = fleteInfo.ratePerTon;
+  // Flete neutralizado (0) en la fórmula a pedido del cliente
+  const fleteMonto = 0;
+  const ivaFleteMonto = 0;
+  const fleteInfo: FreightLookupResult = {
+    km: 0,
+    ratePerTon: 0,
+    found: false,
+    status: 'sin_km',
+    statusLabel: "Sin Flete"
+  };
 
-  // 2. Calculos auxiliares (Filas 36 a 45 del Excel)
+  // 2. Calculos auxiliares
   const ivaCerealMonto = precio * parametros.ivaCerealAlicuota; // B36
   const comisionMonto = precio * parametros.comisionAlicuota; // B37
   const ivaComisionMonto = comisionMonto * parametros.ivaCerealAlicuota; // B38
   const selladoMonto = (precio + ivaCerealMonto) * parametros.selladoAlicuota; // B39
   const percepcionIibbMonto = iibbAplica ? precio * parametros.percepcionIibbAlicuota : 0; // B40
-  const ivaFleteMonto = fleteMonto * parametros.ivaCerealAlicuota; // B42
 
-  // Base Retencion IVA = precio - comision - flete ($) (B43)
-  const baseRetencionIva = Math.max(0, precio - comisionMonto - fleteMonto);
+  // Base Retencion IVA = precio - comision ($) (sin deducción de flete)
+  const baseRetencionIva = Math.max(0, precio - comisionMonto);
 
   // Alicuotas segun SISA para Venta Normal (B44 y B45)
   let alicuotaRetIvaVenta = parametros.sisa2RetIva;
@@ -386,7 +380,7 @@ export function calculateCanjeExactExcel(
     canjeRetGanancias = precio * (manualGanPct / 100);
   }
 
-  // Monto final Canje (C29 = SUM(C18:C27))
+  // Monto final Canje (sin deducción de flete)
   const canjeMontoFinalTn =
     precio +
     ivaCerealMonto -
@@ -395,9 +389,7 @@ export function calculateCanjeExactExcel(
     selladoMonto -
     canjeRetIva -
     canjeRetGanancias -
-    percepcionIibbMonto -
-    fleteMonto -
-    ivaFleteMonto;
+    percepcionIibbMonto;
 
   const canjeTnNecesarias = canjeMontoFinalTn > 0 && monto > 0 ? monto / canjeMontoFinalTn : 0;
 
@@ -410,8 +402,8 @@ export function calculateCanjeExactExcel(
     retencionIva: -canjeRetIva,
     retencionGanancias: -canjeRetGanancias,
     percepcionIibb: -percepcionIibbMonto,
-    flete: -fleteMonto,
-    ivaFlete: -ivaFleteMonto,
+    flete: 0,
+    ivaFlete: 0,
     depCbuIva: 0,
     montoFinalPorTonelada: canjeMontoFinalTn,
     toneladasNecesarias: canjeTnNecesarias
@@ -419,13 +411,12 @@ export function calculateCanjeExactExcel(
 
   // 4. DESGLOSE VENTA NORMAL (Columna D)
   const ventaRetIva = baseRetencionIva * alicuotaRetIvaVenta; // D23
-  const ventaRetGanancias = Math.max(0, precio - comisionMonto - selladoMonto - fleteMonto) * alicuotaRetGananciasVenta; // D24
+  const ventaRetGanancias = Math.max(0, precio - comisionMonto - selladoMonto) * alicuotaRetGananciasVenta; // D24 (sin flete)
 
-  // Dep CBU IVA: = +(D19 + D21 + D27) + D23 (en el Excel D21, D27, D23 son negativos)
-  // Es decir: (ivaCerealMonto - ivaComisionMonto - ivaFleteMonto) - ventaRetIva
-  const ventaDepCbuIva = Math.max(0, (ivaCerealMonto - ivaComisionMonto - ivaFleteMonto) - ventaRetIva);
+  // Dep CBU IVA: (ivaCerealMonto - ivaComisionMonto) - ventaRetIva (sin ivaFlete)
+  const ventaDepCbuIva = Math.max(0, (ivaCerealMonto - ivaComisionMonto) - ventaRetIva);
 
-  // Subtotal suma de rubros antes de CBU
+  // Subtotal suma de rubros antes de CBU (sin flete)
   const ventaSubtotalRubros =
     precio +
     ivaCerealMonto -
@@ -434,9 +425,7 @@ export function calculateCanjeExactExcel(
     selladoMonto -
     ventaRetIva -
     ventaRetGanancias -
-    percepcionIibbMonto -
-    fleteMonto -
-    ivaFleteMonto;
+    percepcionIibbMonto;
 
   // Monto final Venta Normal (D29 = SUM(D18:D27) - D28)
   const ventaMontoFinalTn = ventaSubtotalRubros - ventaDepCbuIva;
@@ -452,9 +441,9 @@ export function calculateCanjeExactExcel(
     retencionIva: -ventaRetIva,
     retencionGanancias: -ventaRetGanancias,
     percepcionIibb: -percepcionIibbMonto,
-    flete: -fleteMonto,
-    ivaFlete: -ivaFleteMonto,
-    depCbuIva: ventaDepCbuIva,
+    flete: 0,
+    ivaFlete: 0,
+    depCbuIva: -ventaDepCbuIva,
     montoFinalPorTonelada: ventaMontoFinalTn,
     toneladasNecesarias: ventaTnNecesarias
   };

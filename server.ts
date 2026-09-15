@@ -58,12 +58,11 @@ async function startServer() {
       const rawList = JSON.parse(match[1]);
 
       // Mapeo de grano_id a IDs de nuestro sistema
-      // 9: Maíz, 10: Soja, 11: Trigo, 12: Girasol, 13: Sorgo, 15: Arveja, 16: Cebada, 18: Maní
+      // 9: Maíz, 10: Soja, 11: Trigo, 13: Sorgo, 15: Arveja, 16: Cebada, 18: Maní (Girasol excluido)
       const granoMap: Record<string, string> = {
         "10": "soja",
         "9": "maiz",
         "11": "trigo",
-        "12": "girasol",
         "13": "sorgo",
         "16": "cebada",
         "15": "arveja_verde",
@@ -75,7 +74,6 @@ async function startServer() {
         soja: { rosarioARS: 555000, bahiaARS: 550000 },
         maiz: { rosarioARS: 293400, bahiaARS: 290000 },
         trigo: { rosarioARS: 346700, bahiaARS: 342000 },
-        girasol: { rosarioARS: 760000, bahiaARS: 755000 },
         sorgo: { rosarioARS: 275300, bahiaARS: 270000 },
         cebada: { rosarioARS: 310000, bahiaARS: 305000 },
         arveja_verde: { rosarioARS: 480000, bahiaARS: 475000 },
