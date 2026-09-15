@@ -1033,10 +1033,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
       {/* HEADER PRINCIPAL: Marca ADG a la izquierda y Dólar BNA derecha*/}
       {/* ============================================================ */}
       <header id="simulator-header" className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Logo ADG + Línea divisoria finita + Título Simulador de Canje de Granos */}
-          <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
             <a 
               href="#" 
               onClick={(e) => {
@@ -1051,32 +1051,48 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               className="flex items-center shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
               title="ADG - Almacén de Granos"
             >
-              <Logo lightBg={true} height={42} />
+              <div className="sm:hidden">
+                <Logo lightBg={true} height={32} />
+              </div>
+              <div className="hidden sm:block">
+                <Logo lightBg={true} height={42} />
+              </div>
             </a>
 
-            <div className="h-6 sm:h-7 w-px bg-gray-200" />
+            <div className="h-5 sm:h-7 w-px bg-gray-200 shrink-0" />
 
-            <h1 className="text-sm sm:text-base md:text-lg font-black text-gray-800 tracking-tight whitespace-nowrap">
-              Simulador de Canje de Granos
+            <h1 className="text-xs sm:text-base md:text-lg font-black text-gray-800 tracking-tight truncate">
+              <span className="sm:hidden">Simulador Canje</span>
+              <span className="hidden sm:inline">Simulador de Canje de Granos</span>
             </h1>
           </div>
 
-          {/* Margen derecho: Cotización Dólar BNA Divisa (Compra y Venta) */}
-          <div id="header-dolar-bna" className="flex items-center space-x-2.5 sm:space-x-3.5 bg-slate-50 px-3 sm:px-3.5 py-1.5 rounded-xl border border-gray-200 shadow-2xs text-xs shrink-0">
-            <div className="text-left flex items-center space-x-1.5">
-              <span className="text-[10px] sm:text-[11px] font-extrabold text-cyan-900 uppercase tracking-tight leading-tight">
-                BNA DIVISA
+          {/* Margen derecho: Cotización Dólar BNA Divisa (Compra y Venta) adaptado chiquito en mobile */}
+          <div 
+            id="header-dolar-bna" 
+            className="flex items-center space-x-1.5 sm:space-x-3.5 bg-slate-50 px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl border border-gray-200 shadow-2xs text-[10px] sm:text-xs shrink-0"
+          >
+            <div className="text-left flex items-center space-x-1 sm:space-x-1.5">
+              <span className="text-[9px] sm:text-[11px] font-extrabold text-cyan-900 uppercase tracking-tight leading-tight">
+                <span className="sm:hidden">BNA</span>
+                <span className="hidden sm:inline">BNA DIVISA</span>
               </span>
-              <span className={`w-2 h-2 rounded-full ${dolarLiveStatus === 'live' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+              <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${dolarLiveStatus === 'live' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
             </div>
-            <div className="h-5 w-px bg-gray-200" />
-            <div className="flex items-center space-x-2.5 sm:space-x-3.5 text-xs">
-              <div className="text-gray-700">
-                <span className="text-[10px] font-bold text-gray-500 mr-1">COMPRA:</span>
+            <div className="h-4 sm:h-5 w-px bg-gray-200" />
+            <div className="flex items-center space-x-1.5 sm:space-x-3.5 text-[10px] sm:text-xs">
+              <div className="text-gray-700 flex items-center">
+                <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 mr-0.5 sm:mr-1">
+                  <span className="sm:hidden">C:</span>
+                  <span className="hidden sm:inline">COMPRA:</span>
+                </span>
                 <span className="font-black text-gray-900">${config.dolarBNA.compra}</span>
               </div>
-              <div className="text-gray-700">
-                <span className="text-[10px] font-bold text-gray-500 mr-1">VENTA:</span>
+              <div className="text-gray-700 flex items-center">
+                <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 mr-0.5 sm:mr-1">
+                  <span className="sm:hidden">V:</span>
+                  <span className="hidden sm:inline">VENTA:</span>
+                </span>
                 <span className="font-black text-gray-900">${config.dolarBNA.venta}</span>
               </div>
             </div>
