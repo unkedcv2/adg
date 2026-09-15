@@ -17,17 +17,19 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  ChevronsDown,
-  ArrowDown,
   RefreshCw,
   TrendingUp,
   ShieldCheck,
   Building2,
   Sliders,
-  Sparkles
+  Sparkles,
+  Printer,
+  ArrowRight,
+  Share2
 } from 'lucide-react';
 import Logo from './Logo';
 import GrainIcon from './GrainIcons';
+import CanjeQuoteExportModal from './CanjeQuoteExportModal';
 // @ts-ignore
 import adgLogoBlanco from '../assets/images/LOGO SIN ALMACEN DE GRANOS BLANCO.png';
 import {
@@ -78,52 +80,11 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   const [retIvaManualSisa3, setRetIvaManualSisa3] = useState<number | ''>(8);
   const [retGanManualSisa3, setRetGanManualSisa3] = useState<number | ''>(15);
 
-  // Detección de visibilidad del módulo de Beneficio Directo para avisar al usuario en notebooks/pantallas bajas
-  const [isBeneficioInViewport, setIsBeneficioInViewport] = useState(false);
+  // Estado de navegación móvil adaptada a pantallas táctiles (Estilo App)
+  const [mobileTab, setMobileTab] = useState<'parametros' | 'canje' | 'normal' | 'beneficio'>('parametros');
 
-  useEffect(() => {
-    const beneficioEl = document.getElementById('resumen-beneficio-productor-card');
-    if (!beneficioEl) return;
-
-    const checkVisibility = () => {
-      const rect = beneficioEl.getBoundingClientRect();
-      const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-      // Consideramos visible si al menos el 25% del card está dentro del viewport visible
-      const isVisible = rect.top < windowHeight - 50 && rect.bottom > 80;
-      setIsBeneficioInViewport(isVisible);
-    };
-
-    // Ejecutar chequeo inicial
-    checkVisibility();
-
-    // IntersectionObserver con fallback a scroll listener
-    let observer: IntersectionObserver | null = null;
-    if ('IntersectionObserver' in window) {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          setIsBeneficioInViewport(entry.isIntersecting && entry.intersectionRatio > 0.2);
-        },
-        { threshold: [0, 0.2, 0.5, 0.8] }
-      );
-      observer.observe(beneficioEl);
-    }
-
-    window.addEventListener('scroll', checkVisibility, { passive: true });
-    window.addEventListener('resize', checkVisibility, { passive: true });
-
-    return () => {
-      if (observer) observer.disconnect();
-      window.removeEventListener('scroll', checkVisibility);
-      window.removeEventListener('resize', checkVisibility);
-    };
-  }, []);
-
-  const scrollToBeneficio = () => {
-    const el = document.getElementById('resumen-beneficio-productor-card');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  };
+  // Control del diálogo de Exportación y Cotización PDF / WhatsApp
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Referencias para evitar stale closures en el intervalo de actualización periódica
   const selectedGrainIdRef = useRef(selectedGrainId);
@@ -416,6 +377,655 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
     return `https://wa.me/5492314405179?text=${text}`;
   }, [result, plaza, moneda, montoCalculadoUSD, precioCalculadoUSD, config.dolarBNA.compra]);
 
+  // =========================================================================
+  // FUNCIONES DE RENDERIZADO MODULARES PARA VISTA DESKTOP Y EXPERIENCIA MOBILE
+  // =========================================================================
+  const renderParametrosCard = (isMobile = false) => (
+    <div className="rounded-2xl bg-black text-white p-4 sm:p-5 shadow-xl flex flex-col justify-between border-2 border-slate-800 h-full">
+      <div>
+        {/* Título de Parámetros */}
+        <div className="border-b border-white/15 pb-2.5 mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+              Parámetros
+            </h2>
+          </div>
+          <div className="p-1.5 rounded-lg bg-white/10 text-brand-gold">
+            <Coins className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Resumen rápido para móvil si ya hay resultado */}
+        {isMobile && result && (
+          <div className="mb-3 p-2.5 bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-brand-green/40 rounded-xl flex items-center justify-between">
+            <div className="text-left">
+              <span className="text-[10px] font-bold text-gray-300 uppercase block leading-none">Entregás en Canje:</span>
+              <span className="text-sm font-black text-brand-gold-light">{formatTn(result.canje.toneladasNecesarias)}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase block leading-none">Ahorrás:</span>
+              <span className="text-sm font-black text-emerald-300">+{formatTn(result.ventaja.ahorroToneladas)}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Selector de Moneda: ARS vs USD */}
+        <div className="bg-white/10 p-1 rounded-xl border border-white/15 mb-3 flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-300 pl-1.5 flex items-center space-x-1">
+            <DollarSign className="w-3.5 h-3.5 text-brand-gold" />
+            <span>Moneda:</span>
+          </span>
+          <div className="flex items-center space-x-1">
+            <button
+              type="button"
+              onClick={() => handleToggleMoneda('ARS')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                moneda === 'ARS'
+                  ? 'bg-brand-gold text-slate-950 shadow-xs'
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Pesos
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleMoneda('USD')}
+              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                moneda === 'USD'
+                  ? 'bg-brand-gold text-slate-950 shadow-xs'
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Dólar
+            </button>
+          </div>
+        </div>
+
+        {/* Controles del Formulario */}
+        <div className="space-y-3">
+          
+          {/* 1. Monto a Canjear */}
+          <div>
+            <label htmlFor="param-monto-canjear" className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
+              <span>
+                Monto a Canjear ({moneda === 'USD' ? 'USD' : '$ ARS'}) <span className="text-brand-gold font-bold">*</span>
+              </span>
+              {(montoACanjear === '' || montoACanjear <= 0) && (
+                <span className="text-[10px] text-amber-400 font-normal normal-case">Obligatorio</span>
+              )}
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-extrabold text-sm pointer-events-none">
+                {moneda === 'USD' ? 'USD' : '$'}
+              </span>
+              <input
+                id="param-monto-canjear"
+                type="number"
+                inputMode="decimal"
+                min={1}
+                step={moneda === 'USD' ? 100 : 10000}
+                value={montoACanjear === '' ? '' : montoACanjear}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setMontoACanjear(val === '' ? '' : Math.max(0, Number(val)));
+                }}
+                placeholder={moneda === 'USD' ? 'Ej: 50.000' : 'Ej: 100.000.000'}
+                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs placeholder:text-gray-400 placeholder:font-normal`}
+                required
+              />
+            </div>
+            {montoCalculadoARS > 0 && (
+              <p className="text-[10.5px] text-gray-400 mt-0.5">
+                {moneda === 'USD' ? (
+                  <>Equivale a <strong>{formatMoney(montoCalculadoARS)}</strong> al Dólar BNA Divisa Compra (${config.dolarBNA.compra})</>
+                ) : (
+                  <>Equivale a <strong>USD {montoCalculadoUSD.toLocaleString('es-AR')}</strong> al Dólar BNA Divisa Compra (${config.dolarBNA.compra})</>
+                )}
+              </p>
+            )}
+          </div>
+
+          {/* 2. Tipo de Grano a Entregar */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="param-grano" className="block text-xs font-bold uppercase tracking-wider text-gray-300">
+                Grano a Entregar <span className="text-brand-gold font-bold">*</span>
+              </label>
+              <span className="text-[10.5px] text-gray-400 font-medium">
+                Plaza {plaza === 'bahia_blanca' ? 'Bahía Blanca' : 'Rosario'}
+              </span>
+            </div>
+
+            <div className="relative flex items-center">
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-brand-green flex items-center justify-center p-1 bg-slate-100 rounded-md shadow-2xs">
+                <GrainIcon type={selectedGrain.id} className="w-4 h-4 text-brand-green" strokeWidth={1.8} />
+              </div>
+              <select
+                id="param-grano"
+                value={selectedGrainId}
+                onChange={(e) => handleSelectGrain(e.target.value)}
+                className="w-full bg-white text-gray-900 rounded-lg pl-10 pr-9 py-2 text-xs sm:text-sm font-extrabold uppercase border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs appearance-none cursor-pointer"
+              >
+                {config.grains.map((g) => (
+                  <option key={g.id} value={g.id} className="py-2 font-bold text-gray-900 uppercase">
+                    {g.name} ({g.category})
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-600">
+                <ChevronDown className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Precio por Tonelada */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="param-precio-tn" className="block text-xs font-bold uppercase tracking-wider text-gray-300">
+                Precio ({moneda === 'USD' ? 'USD / Tn' : '$ / Tn'}) <span className="text-brand-gold font-bold">*</span>
+              </label>
+              {isPriceCustom && (
+                <button
+                  type="button"
+                  onClick={handleResetToPizarra}
+                  className="text-[10px] text-brand-gold-light hover:underline flex items-center space-x-1 cursor-pointer"
+                  title="Restablecer al valor oficial de pizarra"
+                >
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  <span>
+                    Pizarra: {moneda === 'USD' ? `USD ${precioPizarraActual}` : `$ ${Math.round(precioPizarraActual).toLocaleString('es-AR')}`}
+                  </span>
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-extrabold text-sm pointer-events-none">
+                {moneda === 'USD' ? 'USD' : '$'}
+              </span>
+              <input
+                id="param-precio-tn"
+                type="number"
+                inputMode="decimal"
+                min={1}
+                step={moneda === 'USD' ? 0.5 : 100}
+                value={precioPorTonelada === '' ? '' : precioPorTonelada}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPrecioPorTonelada(val === '' ? '' : Math.max(0, Number(val)));
+                  setIsPriceCustom(true);
+                }}
+                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs`}
+                required
+              />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-0.5 flex items-center justify-between">
+              <span>
+                {moneda === 'USD' ? (
+                  <>Equivale a <strong>{formatMoney(precioCalculadoARS)}/Tn</strong>. Editable a mano.</>
+                ) : (
+                  <>Equivale a <strong>USD {precioCalculadoUSD}/Tn</strong>. Editable a mano.</>
+                )}
+              </span>
+            </p>
+          </div>
+
+          {/* 4. Score SISA */}
+          <div>
+            <label htmlFor="param-sisa" className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
+              <span>Score SISA (ARCA / AFIP) <span className="text-brand-gold font-bold">*</span></span>
+            </label>
+            <select
+              id="param-sisa"
+              value={selectedSisaId}
+              onChange={(e) => setSelectedSisaId(Number(e.target.value) as 1 | 2 | 3)}
+              className="w-full bg-white text-gray-900 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs cursor-pointer"
+            >
+              {config.sisaOptions.map((s) => (
+                <option key={s.id} value={s.id} className="text-gray-900 font-bold">
+                  {s.name} - {s.statusLabel}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Campos opcionales si se selecciona SISA Estado 3 */}
+          {selectedSisaId === 3 && (
+            <div className="bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/40 space-y-2 text-xs">
+              <span className="font-extrabold text-amber-200 block text-[11px] uppercase tracking-wider">
+                Alícuotas Manuales Canje (SISA 3)
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-amber-100 block mb-0.5">Ret. IVA Canje (%)</label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={100}
+                    value={retIvaManualSisa3}
+                    onChange={(e) => setRetIvaManualSisa3(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-white text-gray-900 px-2.5 py-1.5 rounded-lg font-bold text-xs"
+                    placeholder="8"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-amber-100 block mb-0.5">Ret. Ganancias (%)</label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={100}
+                    value={retGanManualSisa3}
+                    onChange={(e) => setRetGanManualSisa3(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-white text-gray-900 px-2.5 py-1.5 rounded-lg font-bold text-xs"
+                    placeholder="15"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recuadro de notas aclaratorias */}
+          <div className="mt-3 p-3 bg-white/10 rounded-xl border border-white/15 text-[11px] text-gray-300 space-y-2 leading-relaxed">
+            <p className="flex items-start gap-1.5">
+              <span className="text-brand-gold font-black">•</span>
+              <span>Cotización con precio pizarra del día. Ajustable a condiciones comerciales de cooperativa o acopio.</span>
+            </p>
+            <p className="flex items-start gap-1.5">
+              <span className="text-brand-gold font-black">•</span>
+              <span>La simulación no contempla condiciones comerciales de acopio o cooperativa y es a modo de referencia.</span>
+            </p>
+            <p className="flex items-start gap-1.5">
+              <span className="text-brand-gold font-black">•</span>
+              <span>El productor obtiene un ahorro del 1,2% correspondiente al impuesto al débito y crédito bancario, el cual no se encuentra reflejado en la simulación.</span>
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Botones de acción rápida para vista mobile */}
+      {isMobile && (
+        <div className="pt-4 mt-4 border-t border-white/15 grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => setMobileTab('canje')}
+            className="bg-brand-green hover:bg-emerald-600 text-white py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+          >
+            <span>Ver Canje ADG</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('beneficio')}
+            className="bg-brand-gold hover:bg-yellow-400 text-slate-950 py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+          >
+            <span>Ver Ahorro</span>
+            <Sparkles className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderCanjeCard = (isMobile = false) => (
+    <div className="rounded-2xl bg-gradient-to-br from-[#072a16] to-[#044524] text-white p-4 sm:p-5 shadow-lg border-2 border-brand-green-light flex flex-col justify-between h-full relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-gold" />
+
+      <div className="flex-1 flex flex-col justify-between">
+        <div>
+          {/* Header Columna 2 */}
+          <div className="border-b border-emerald-700/60 pb-3 mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg sm:text-xl font-black text-white leading-tight">
+                Liquidación Canje ADG
+              </h2>
+            </div>
+            <div className="shrink-0 flex items-center justify-center pl-2" title="ADG Almacén de Granos">
+              <img 
+                src={adgLogoBlanco} 
+                alt="ADG Logo" 
+                className="h-6 sm:h-7 w-auto object-contain drop-shadow-xs" 
+              />
+            </div>
+          </div>
+
+          {/* Filas de conceptos de Canje: Etiquetas libres a la izquierda, Importes en recuadros alineados */}
+          <div className="space-y-2.5 sm:space-y-3">
+            
+            {/* 1. Precio Cereal */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
+                Precio ({moneda === 'USD' ? 'USD/Tn' : '$/Tn'}):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
+                  <span className="text-sm sm:text-base font-black text-gray-800 leading-tight">
+                    {result
+                      ? moneda === 'USD'
+                         ? formatUSDPrecise(result.canje.precioGrano / config.dolarBNA.compra)
+                        : formatMoneyPrecise(result.canje.precioGrano)
+                      : moneda === 'USD'
+                        ? formatUSDPrecise(precioCalculadoUSD)
+                        : formatMoneyPrecise(Number(precioPorTonelada || 0))}
+                  </span>
+                  {moneda === 'USD' && result && (
+                    <span className="text-[10px] text-gray-400 font-semibold leading-tight">
+                      ({formatMoneyPrecise(result.canje.precioGrano)})
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Retención IVA AFIP */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
+                Ret. IVA AFIP ({selectedSisaId === 3 && retIvaManualSisa3 ? `${retIvaManualSisa3}%` : '0%'}):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-emerald-700">
+                    {result && result.canje.retencionIva < 0
+                      ? formatMoneyPrecise(result.canje.retencionIva)
+                      : '$ 0,00 (0%)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Retención Ganancias */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
+                Ret. Ganancias ({selectedSisaId === 3 && retGanManualSisa3 ? `${retGanManualSisa3}%` : '0%'}):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-emerald-700">
+                    {result && result.canje.retencionGanancias < 0
+                      ? formatMoneyPrecise(result.canje.retencionGanancias)
+                      : '$ 0,00 (0%)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. IVA Cereal (+10.5%) */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
+                IVA Cereal (+10.5%):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-emerald-700">
+                    + {result ? formatMoneyPrecise(result.canje.ivaCereal) : formatMoneyPrecise(Number(precioPorTonelada || 0) * 0.105)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Sección inferior: Monto Final Disponible (TODO ENCUADRADO) + Total Toneladas */}
+        <div className="pt-3 mt-3 border-t border-emerald-700/60 space-y-2.5">
+          
+          {/* Monto Final Disponible por Tn: TODO ENCUADRADO */}
+          <div className="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/20 shadow-xs flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-extrabold text-white">
+              Monto Final Disponible / Tn:
+            </span>
+            <span className="text-base sm:text-lg font-black text-brand-gold-light">
+              {result ? formatMoneyPrecise(result.canje.montoFinalPorTonelada) : '—'}
+            </span>
+          </div>
+
+          {/* Total Toneladas a Entregar Box */}
+          <div className="bg-white rounded-xl p-3 text-center shadow-xs border-2 border-brand-gold">
+            <span className="text-[11px] uppercase font-extrabold tracking-wider text-brand-green-dark block mb-0.5">
+              Total Toneladas a Entregar:
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-brand-green-dark block leading-tight py-0.5">
+              {result ? formatTn(result.canje.toneladasNecesarias) : '-- Tn'}
+            </span>
+            <span className="text-[10.5px] text-emerald-800 font-semibold block">
+              {result ? 'Menor cantidad de cereal gracias al canje' : 'Ingresá el monto de la operación para calcular'}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Botones de navegación en mobile */}
+      {isMobile && (
+        <div className="pt-3 mt-3 border-t border-emerald-700/60 flex items-center justify-between gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setMobileTab('normal')}
+            className="flex-1 bg-white/15 hover:bg-white/25 text-white py-2.5 px-3 rounded-xl font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+          >
+            <span>Ver Venta Normal</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('beneficio')}
+            className="bg-brand-gold text-slate-950 py-2.5 px-3 rounded-xl font-black transition-all cursor-pointer"
+          >
+            Ver Ahorro
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderVentaNormalCard = (isMobile = false) => (
+    <div className="rounded-2xl bg-slate-200/95 p-4 sm:p-5 shadow-md border border-slate-300 flex flex-col justify-between h-full relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-400" />
+
+      <div className="flex-1 flex flex-col justify-between">
+        <div>
+          {/* Header Columna 3 */}
+          <div className="border-b border-slate-300 pb-3 mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg sm:text-xl font-black text-slate-800 leading-tight">
+                Liquidación Normal
+              </h2>
+            </div>
+          </div>
+
+          {/* Filas de conceptos de Venta Normal: Etiquetas libres a la izquierda, Importes en recuadros alineados */}
+          <div className="space-y-2.5 sm:space-y-3">
+            
+            {/* Precio Cereal */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
+                Precio ({moneda === 'USD' ? 'USD/Tn' : '$/Tn'}):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
+                  <span className="text-sm sm:text-base font-black text-slate-800 leading-tight">
+                    {result
+                      ? moneda === 'USD'
+                        ? formatUSDPrecise(result.ventaNormal.precioGrano / config.dolarBNA.compra)
+                        : formatMoneyPrecise(result.ventaNormal.precioGrano)
+                      : moneda === 'USD'
+                        ? formatUSDPrecise(precioCalculadoUSD)
+                        : formatMoneyPrecise(Number(precioPorTonelada || 0))}
+                  </span>
+                  {moneda === 'USD' && result && (
+                    <span className="text-[10px] text-gray-400 font-semibold leading-tight">
+                      ({formatMoneyPrecise(result.ventaNormal.precioGrano)})
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Retención IVA SISA */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
+                Ret. IVA AFIP ({selectedSisaId === 1 ? '5%' : selectedSisaId === 2 ? '7%' : '8%'}):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-rose-600">
+                    {result ? formatMoneyPrecise(result.ventaNormal.retencionIva) : '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Retención Ganancias SISA */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
+                Ret. Ganancias ({selectedSisaId === 1 ? '0%' : selectedSisaId === 2 ? '2%' : '15%'}):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-rose-600">
+                    {result ? formatMoneyPrecise(result.ventaNormal.retencionGanancias) : '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Depósito CBU IVA */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
+                Dep. CBU IVA:
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-amber-700">
+                    {result ? formatMoneyPrecise(result.ventaNormal.depCbuIva) : '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Sección inferior: Monto Final Disponible (TODO ENCUADRADO) + Total Toneladas */}
+        <div className="pt-3 mt-3 border-t border-slate-300 space-y-2.5">
+          
+          {/* Monto Final Disponible por Tn: TODO ENCUADRADO */}
+          <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-xs flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-extrabold text-slate-700">
+              Monto Final Disponible / Tn:
+            </span>
+            <span className="text-base sm:text-lg font-black text-slate-900">
+              {result ? formatMoneyPrecise(result.ventaNormal.montoFinalPorTonelada) : '—'}
+            </span>
+          </div>
+
+          {/* Total Toneladas a Entregar Box */}
+          <div className="bg-white border-2 border-slate-400 rounded-xl p-3 text-center shadow-xs">
+            <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-600 block mb-0.5">
+              Total Toneladas a Entregar:
+            </span>
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 block leading-tight py-0.5">
+              {result ? formatTn(result.ventaNormal.toneladasNecesarias) : '-- Tn'}
+            </span>
+            <span className="text-[10.5px] text-rose-600 font-semibold block">
+              {result ? `+ ${formatTn(result.ventaja.ahorroToneladas)} más por retenciones` : 'Cargá los parámetros para calcular'}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Botones de navegación en mobile */}
+      {isMobile && (
+        <div className="pt-3 mt-3 border-t border-slate-300 flex items-center justify-between gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setMobileTab('canje')}
+            className="flex-1 bg-brand-green hover:bg-emerald-700 text-white py-2.5 px-3 rounded-xl font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+          >
+            <span>Ver Canje ADG</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('beneficio')}
+            className="bg-slate-800 text-white py-2.5 px-3 rounded-xl font-bold transition-all cursor-pointer"
+          >
+            Ver Ahorro
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderBeneficioCard = (isMobile = false) => (
+    <div 
+      id="resumen-beneficio-productor-card"
+      className="rounded-2xl bg-gradient-to-r from-[#072a16] via-brand-green to-[#044524] text-white p-4 sm:p-5 shadow-xl border-2 border-brand-gold relative overflow-hidden"
+    >
+      {/* Brillo sutil de fondo */}
+      <div className="absolute -top-12 -right-12 w-48 h-48 bg-brand-gold/15 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+        
+        {/* Zona Izquierda: Título, Toneladas de Ahorro y Ventajas */}
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-brand-gold text-slate-950 text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider shadow-2xs">
+              Beneficio Directo al Productor
+            </span>
+            {result && (
+              <span className="text-[10.5px] sm:text-[11px] font-black text-brand-gold-light bg-black/30 px-2 py-0.5 rounded-full border border-brand-gold/30">
+                +{result.ventaja.porcentajeVentaja.toFixed(2)}% de ventaja
+              </span>
+            )}
+          </div>
+
+          {result ? (
+            <div>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-white leading-tight">
+                Ahorrás <span className="text-brand-gold-light underline decoration-brand-gold">{formatTn(result.ventaja.ahorroToneladas)}</span> de {selectedGrain.name}
+              </h3>
+            </div>
+          ) : (
+            <div>
+              <h3 className="text-lg sm:text-xl font-black text-white">
+                Simulá tu operación en {selectedGrain.name}
+              </h3>
+            </div>
+          )}
+        </div>
+
+        {/* Zona Derecha: Cifra de Ahorro Económico */}
+        <div className="flex flex-col items-start md:items-end justify-center shrink-0">
+          <div className="text-left md:text-right">
+            <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold text-emerald-200 block">
+              Ahorro Económico Estimado:
+            </span>
+            <div className="text-2xl sm:text-3xl font-black text-brand-gold-light tracking-tight leading-none my-0.5">
+              {result
+                ? moneda === 'USD'
+                  ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)
+                  : formatMoney(result.ventaja.ahorroMonto)
+                : '$ 0'}
+            </div>
+            {result && (
+              <span className="text-[11px] text-emerald-200 block font-semibold">
+                {moneda === 'USD' ? (
+                  <>Equivale a <strong>{formatMoney(result.ventaja.ahorroMonto)}</strong></>
+                ) : (
+                  <>Equivale a <strong>~ {formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)}</strong></>
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+
   return (
     <div id="canje-simulator-page" className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans w-full overflow-x-clip">
       
@@ -515,7 +1125,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               <div className="hidden md:block h-9 w-px bg-gray-200 shrink-0" />
 
               {/* Los 3 Granos Principales distribuidos en Grid para ocupar todo el ancho disponible */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3.5 flex-grow w-full">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 flex-grow w-full">
                 {topGrains.map((grain) => {
                   const isSelected = grain.id === selectedGrainId;
                   const grainPriceARS = plaza === 'bahia_blanca' ? grain.prices.bahiaARS : grain.prices.rosarioARS;
@@ -524,29 +1134,29 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                     <button
                       key={grain.id}
                       onClick={() => handleSelectGrain(grain.id)}
-                      className={`group flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-[0.98] w-full ${
+                      className={`group flex flex-col sm:flex-row items-center justify-center sm:justify-between px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-[0.98] w-full text-center sm:text-left ${
                         isSelected
                           ? 'bg-brand-green text-white border-brand-green shadow-md ring-2 ring-brand-green/30'
                           : 'bg-white text-gray-800 border-gray-200 hover:border-brand-green/50 hover:bg-emerald-50/40'
                       }`}
                     >
-                      {/* Lado izquierdo: Ícono agrandado + Nombre del grano */}
-                      <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                      {/* Lado izquierdo: Ícono + Nombre del grano */}
+                      <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
                         <div className={`shrink-0 transition-transform group-hover:scale-105 flex items-center justify-center ${
                           isSelected 
                             ? 'text-brand-gold-light' 
                             : 'text-brand-green'
                         }`}>
-                          <GrainIcon type={grain.id} className="w-10 h-10 sm:w-11 sm:h-11" strokeWidth={1.8} />
+                          <GrainIcon type={grain.id} className="w-5 h-5 sm:w-11 sm:h-11" strokeWidth={1.8} />
                         </div>
                         
-                        <span className="font-black uppercase text-sm sm:text-base tracking-wide truncate">
+                        <span className="font-black uppercase text-[11px] sm:text-base tracking-tight sm:tracking-wide truncate">
                           {grain.shortName}
                         </span>
                       </div>
                       
                       {/* Lado derecho: Precio del grano */}
-                      <span className={`text-sm sm:text-base font-black shrink-0 pl-2 ${
+                      <span className={`text-[10.5px] sm:text-base font-black shrink-0 sm:pl-2 ${
                         isSelected ? 'text-brand-gold-light' : 'text-brand-green'
                       }`}>
                         {moneda === 'USD'
@@ -568,601 +1178,113 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
       {/* ============================================================ */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 sm:pb-10">
         
-        {/* Grid Principal: Columna 1 (Parámetros) + Bloque Col 2 y 3 con Beneficio Directo */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+        {/* ======================================================== */}
+        {/* VISTA MOBILE DEDICADA: Experiencia tipo App (< lg)        */}
+        {/* ======================================================== */}
+        <div className="lg:hidden space-y-3.5">
           
-          {/* ======================================================== */}
-          {/* COLUMNA 1: PARÁMETROS DE LA OPERACIÓN                    */}
-          {/* ======================================================== */}
-          <div className="lg:col-span-4 rounded-2xl bg-black text-white p-4 sm:p-5 shadow-xl flex flex-col justify-between border-2 border-slate-800">
-            <div>
-              
-              {/* Título de Parámetros */}
-              <div className="border-b border-white/15 pb-2.5 mb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
-                    Parámetros
-                  </h2>
-                </div>
-                <div className="p-1.5 rounded-lg bg-white/10 text-brand-gold">
-                  <Coins className="w-5 h-5" />
-                </div>
-              </div>
-
-              {/* Selector de Moneda: ARS vs USD */}
-              <div className="bg-white/10 p-1 rounded-xl border border-white/15 mb-3 flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-300 pl-1.5 flex items-center space-x-1">
-                  <DollarSign className="w-3.5 h-3.5 text-brand-gold" />
-                  <span>Moneda:</span>
+          {/* 1. Tarjeta Hero de Ahorro Rápido en Vivo */}
+          <div 
+            onClick={() => setMobileTab("beneficio")}
+            className="bg-gradient-to-r from-[#072a16] via-brand-green to-[#044524] text-white p-3.5 rounded-2xl border border-brand-gold/60 shadow-md cursor-pointer active:scale-[0.99] transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 pr-2">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-brand-gold-light block leading-tight">
+                  Ahorro al Productor:
                 </span>
-                <div className="flex items-center space-x-1">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleMoneda('ARS')}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                      moneda === 'ARS'
-                        ? 'bg-brand-gold text-slate-950 shadow-xs'
-                        : 'text-gray-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    Pesos
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleMoneda('USD')}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                      moneda === 'USD'
-                        ? 'bg-brand-gold text-slate-950 shadow-xs'
-                        : 'text-gray-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    Dólar
-                  </button>
-                </div>
-              </div>
-
-              {/* Controles del Formulario */}
-              <div className="space-y-3">
-                
-                {/* 1. Monto a Canjear */}
-                <div>
-                  <label htmlFor="param-monto-canjear" className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
-                    <span>
-                      Monto a Canjear ({moneda === 'USD' ? 'USD' : '$ ARS'}) <span className="text-brand-gold font-bold">*</span>
-                    </span>
-                    {(montoACanjear === '' || montoACanjear <= 0) && (
-                      <span className="text-[10px] text-amber-400 font-normal normal-case">Obligatorio</span>
-                    )}
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-extrabold text-sm pointer-events-none">
-                      {moneda === 'USD' ? 'USD' : '$'}
-                    </span>
-                    <input
-                      id="param-monto-canjear"
-                      type="number"
-                      min={1}
-                      step={moneda === 'USD' ? 100 : 10000}
-                      value={montoACanjear === '' ? '' : montoACanjear}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setMontoACanjear(val === '' ? '' : Math.max(0, Number(val)));
-                      }}
-                      placeholder={moneda === 'USD' ? 'Ej: 50.000' : 'Ej: 100.000.000'}
-                      className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs placeholder:text-gray-400 placeholder:font-normal`}
-                      required
-                    />
-                  </div>
-                  {montoCalculadoARS > 0 && (
-                    <p className="text-[10.5px] text-gray-400 mt-0.5">
-                      {moneda === 'USD' ? (
-                        <>Equivale a <strong>{formatMoney(montoCalculadoARS)}</strong> al Dólar BNA Divisa Compra (${config.dolarBNA.compra})</>
-                      ) : (
-                        <>Equivale a <strong>USD {montoCalculadoUSD.toLocaleString('es-AR')}</strong> al Dólar BNA Divisa Compra (${config.dolarBNA.compra})</>
-                      )}
-                    </p>
-                  )}
-                </div>
-
-                {/* 2. Tipo de Grano a Entregar */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="param-grano" className="block text-xs font-bold uppercase tracking-wider text-gray-300">
-                      Grano a Entregar <span className="text-brand-gold font-bold">*</span>
-                    </label>
-                    <span className="text-[10.5px] text-gray-400 font-medium">
-                      Plaza {plaza === 'bahia_blanca' ? 'Bahía Blanca' : 'Rosario'}
-                    </span>
-                  </div>
-
-                  {/* Menú desplegable completo con ícono del grano activo */}
-                  <div className="relative flex items-center">
-                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-brand-green flex items-center justify-center p-1 bg-slate-100 rounded-md shadow-2xs">
-                      <GrainIcon type={selectedGrain.id} className="w-4 h-4 text-brand-green" strokeWidth={1.8} />
-                    </div>
-                    <select
-                      id="param-grano"
-                      value={selectedGrainId}
-                      onChange={(e) => handleSelectGrain(e.target.value)}
-                      className="w-full bg-white text-gray-900 rounded-lg pl-10 pr-9 py-2 text-xs sm:text-sm font-extrabold uppercase border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs appearance-none cursor-pointer"
-                    >
-                      {config.grains.map((g) => (
-                        <option key={g.id} value={g.id} className="py-2 font-bold text-gray-900 uppercase">
-                          {g.name} ({g.category})
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-600">
-                      <ChevronDown className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Precio por Tonelada - EDITABLE A MANO COMO PIDIÓ EL CLIENTE */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="param-precio-tn" className="block text-xs font-bold uppercase tracking-wider text-gray-300">
-                      Precio ({moneda === 'USD' ? 'USD / Tn' : '$ / Tn'}) <span className="text-brand-gold font-bold">*</span>
-                    </label>
-                    {isPriceCustom && (
-                      <button
-                        type="button"
-                        onClick={handleResetToPizarra}
-                        className="text-[10px] text-brand-gold-light hover:underline flex items-center space-x-1 cursor-pointer"
-                        title="Restablecer al valor oficial de pizarra"
-                      >
-                        <RefreshCw className="w-2.5 h-2.5" />
-                        <span>
-                          Pizarra: {moneda === 'USD' ? `USD ${precioPizarraActual}` : `$ ${Math.round(precioPizarraActual).toLocaleString('es-AR')}`}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-extrabold text-sm pointer-events-none">
-                      {moneda === 'USD' ? 'USD' : '$'}
-                    </span>
-                    <input
-                      id="param-precio-tn"
-                      type="number"
-                      min={1}
-                      step={moneda === 'USD' ? 0.5 : 100}
-                      value={precioPorTonelada === '' ? '' : precioPorTonelada}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPrecioPorTonelada(val === '' ? '' : Math.max(0, Number(val)));
-                        setIsPriceCustom(true);
-                      }}
-                      className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs`}
-                      required
-                    />
-                  </div>
-                  <p className="text-[10px] text-gray-400 mt-0.5 flex items-center justify-between">
-                    <span>
-                      {moneda === 'USD' ? (
-                        <>Equivale a <strong>{formatMoney(precioCalculadoARS)}/Tn</strong>. Editable a mano.</>
-                      ) : (
-                        <>Equivale a <strong>USD {precioCalculadoUSD}/Tn</strong>. Editable a mano.</>
-                      )}
-                    </span>
-                  </p>
-                </div>
-
-                {/* 4. Score SISA */}
-                <div>
-                  <label htmlFor="param-sisa" className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
-                    <span>Score SISA (ARCA / AFIP) <span className="text-brand-gold font-bold">*</span></span>
-                  </label>
-                  <select
-                    id="param-sisa"
-                    value={selectedSisaId}
-                    onChange={(e) => setSelectedSisaId(Number(e.target.value) as 1 | 2 | 3)}
-                    className="w-full bg-white text-gray-900 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs cursor-pointer"
-                  >
-                    {config.sisaOptions.map((s) => (
-                      <option key={s.id} value={s.id} className="text-gray-900 font-bold">
-                        {s.name} - {s.statusLabel}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Campos opcionales si se selecciona SISA Estado 3 */}
-                {selectedSisaId === 3 && (
-                  <div className="bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/40 space-y-2 text-xs">
-                    <span className="font-extrabold text-amber-200 block text-[11px] uppercase tracking-wider">
-                      Alícuotas Manuales Canje (SISA 3)
-                    </span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] text-amber-100 block mb-0.5">Ret. IVA Canje (%)</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={retIvaManualSisa3}
-                          onChange={(e) => setRetIvaManualSisa3(e.target.value === '' ? '' : Number(e.target.value))}
-                          className="w-full bg-white text-gray-900 px-2.5 py-1.5 rounded-lg font-bold text-xs"
-                          placeholder="8"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-amber-100 block mb-0.5">Ret. Ganancias (%)</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={retGanManualSisa3}
-                          onChange={(e) => setRetGanManualSisa3(e.target.value === '' ? '' : Number(e.target.value))}
-                          className="w-full bg-white text-gray-900 px-2.5 py-1.5 rounded-lg font-bold text-xs"
-                          placeholder="15"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Recuadro de notas aclaratorias */}
-                <div className="mt-3 p-3 bg-white/10 rounded-xl border border-white/15 text-[11px] text-gray-300 space-y-2 leading-relaxed">
-                  <p className="flex items-start gap-1.5">
-                    <span className="text-brand-gold font-black">•</span>
-                    <span>Cotización con precio pizarra del día. Ajustable a condiciones comerciales de cooperativa o acopio.</span>
-                  </p>
-                  <p className="flex items-start gap-1.5">
-                    <span className="text-brand-gold font-black">•</span>
-                    <span>La simulación no contempla condiciones comerciales de acopio o cooperativa y es a modo de referencia.</span>
-                  </p>
-                  <p className="flex items-start gap-1.5">
-                    <span className="text-brand-gold font-black">•</span>
-                    <span>El productor obtiene un ahorro del 1,2% correspondiente al impuesto al débito y crédito bancario, el cual no se encuentra reflejado en la simulación.</span>
-                  </p>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-
-
-          {/* ======================================================== */}
-          {/* BLOQUE DERECHO: COL 2 + COL 3 + BENEFICIO DIRECTO        */}
-          {/* ======================================================== */}
-          <div className="lg:col-span-8 flex flex-col justify-between gap-4 h-full">
-            
-            {/* Fila superior: Liquidación Canje ADG & Liquidación Normal lado a lado */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch flex-1">
-              
-              {/* ======================================================== */}
-              {/* COLUMNA 2: LIQUIDACIÓN CANJE ADG                         */}
-              {/* ======================================================== */}
-              <div className="rounded-2xl bg-gradient-to-br from-[#072a16] to-[#044524] text-white p-4 sm:p-5 shadow-lg border-2 border-brand-green-light flex flex-col justify-between h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-gold" />
-
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Header Columna 2 */}
-                    <div className="border-b border-emerald-700/60 pb-3 mb-3 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-lg sm:text-xl font-black text-white leading-tight">
-                          Liquidación Canje ADG
-                        </h2>
-                      </div>
-                      <div className="shrink-0 flex items-center justify-center pl-2" title="ADG Almacén de Granos">
-                        <img 
-                          src={adgLogoBlanco} 
-                          alt="ADG Logo" 
-                          className="h-6 sm:h-7 w-auto object-contain drop-shadow-xs" 
-                        />
-                      </div>
-                    </div>
-
-                    {/* Filas de conceptos de Canje: Etiquetas libres a la izquierda, Importes en recuadros alineados */}
-                    <div className="space-y-2.5 sm:space-y-3">
-                      
-                      {/* 1. Precio Cereal */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                          Precio ({moneda === 'USD' ? 'USD/Tn' : '$/Tn'}):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
-                            <span className="text-sm sm:text-base font-black text-gray-800 leading-tight">
-                              {result
-                                ? moneda === 'USD'
-                                   ? formatUSDPrecise(result.canje.precioGrano / config.dolarBNA.compra)
-                                  : formatMoneyPrecise(result.canje.precioGrano)
-                                : moneda === 'USD'
-                                  ? formatUSDPrecise(precioCalculadoUSD)
-                                  : formatMoneyPrecise(Number(precioPorTonelada || 0))}
-                            </span>
-                            {moneda === 'USD' && result && (
-                              <span className="text-[10px] text-gray-400 font-semibold leading-tight">
-                                ({formatMoneyPrecise(result.canje.precioGrano)})
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 2. Retención IVA AFIP */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                          Ret. IVA AFIP ({selectedSisaId === 3 && retIvaManualSisa3 ? `${retIvaManualSisa3}%` : '0%'}):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                            <span className="text-sm sm:text-base font-black text-emerald-700">
-                              {result && result.canje.retencionIva < 0
-                                ? formatMoneyPrecise(result.canje.retencionIva)
-                                : '$ 0,00 (0%)'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 3. Retención Ganancias */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                          Ret. Ganancias ({selectedSisaId === 3 && retGanManualSisa3 ? `${retGanManualSisa3}%` : '0%'}):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                            <span className="text-sm sm:text-base font-black text-emerald-700">
-                              {result && result.canje.retencionGanancias < 0
-                                ? formatMoneyPrecise(result.canje.retencionGanancias)
-                                : '$ 0,00 (0%)'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 4. IVA Cereal (+10.5%) */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                          IVA Cereal (+10.5%):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                            <span className="text-sm sm:text-base font-black text-emerald-700">
-                              + {result ? formatMoneyPrecise(result.canje.ivaCereal) : formatMoneyPrecise(Number(precioPorTonelada || 0) * 0.105)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Sección inferior: Monto Final Disponible (TODO ENCUADRADO) + Total Toneladas */}
-                  <div className="pt-3 mt-3 border-t border-emerald-700/60 space-y-2.5">
-                    
-                    {/* Monto Final Disponible por Tn: TODO ENCUADRADO */}
-                    <div className="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/20 shadow-xs flex items-center justify-between">
-                      <span className="text-xs sm:text-sm font-extrabold text-white">
-                        Monto Final Disponible / Tn:
-                      </span>
-                      <span className="text-base sm:text-lg font-black text-brand-gold-light">
-                        {result ? formatMoneyPrecise(result.canje.montoFinalPorTonelada) : '—'}
-                      </span>
-                    </div>
-
-                    {/* Total Toneladas a Entregar Box */}
-                    <div className="bg-white rounded-xl p-3 text-center shadow-xs border-2 border-brand-gold">
-                      <span className="text-[11px] uppercase font-extrabold tracking-wider text-brand-green-dark block mb-0.5">
-                        Total Toneladas a Entregar:
-                      </span>
-                      <span className="text-2xl sm:text-3xl font-black text-brand-green-dark block leading-tight py-0.5">
-                        {result ? formatTn(result.canje.toneladasNecesarias) : '-- Tn'}
-                      </span>
-                      <span className="text-[10.5px] text-emerald-800 font-semibold block">
-                        {result ? 'Menor cantidad de cereal gracias al canje' : 'Ingresá el monto de la operación para calcular'}
-                      </span>
-                    </div>
-
-                  </div>
-                </div>
-
-              </div>
-
-
-              {/* ======================================================== */}
-              {/* COLUMNA 3: LIQUIDACIÓN VENTA NORMAL                      */}
-              {/* ======================================================== */}
-              <div className="rounded-2xl bg-slate-200/95 p-4 sm:p-5 shadow-md border border-slate-300 flex flex-col justify-between h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-400" />
-
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Header Columna 3 */}
-                    <div className="border-b border-slate-300 pb-3 mb-3 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-lg sm:text-xl font-black text-slate-800 leading-tight">
-                          Liquidación Normal
-                        </h2>
-                      </div>
-                    </div>
-
-                    {/* Filas de conceptos de Venta Normal: Etiquetas libres a la izquierda, Importes en recuadros alineados */}
-                    <div className="space-y-2.5 sm:space-y-3">
-                      
-                      {/* Precio Cereal */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                          Precio ({moneda === 'USD' ? 'USD/Tn' : '$/Tn'}):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
-                            <span className="text-sm sm:text-base font-black text-slate-800 leading-tight">
-                              {result
-                                ? moneda === 'USD'
-                                  ? formatUSDPrecise(result.ventaNormal.precioGrano / config.dolarBNA.compra)
-                                  : formatMoneyPrecise(result.ventaNormal.precioGrano)
-                                : moneda === 'USD'
-                                  ? formatUSDPrecise(precioCalculadoUSD)
-                                  : formatMoneyPrecise(Number(precioPorTonelada || 0))}
-                            </span>
-                            {moneda === 'USD' && result && (
-                              <span className="text-[10px] text-gray-400 font-semibold leading-tight">
-                                ({formatMoneyPrecise(result.ventaNormal.precioGrano)})
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Retención IVA SISA */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                          Ret. IVA AFIP ({selectedSisaId === 1 ? '5%' : selectedSisaId === 2 ? '7%' : '8%'}):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                            <span className="text-sm sm:text-base font-black text-rose-600">
-                              {result ? formatMoneyPrecise(result.ventaNormal.retencionIva) : '—'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Retención Ganancias SISA */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                          Ret. Ganancias ({selectedSisaId === 1 ? '0%' : selectedSisaId === 2 ? '2%' : '15%'}):
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                            <span className="text-sm sm:text-base font-black text-rose-600">
-                              {result ? formatMoneyPrecise(result.ventaNormal.retencionGanancias) : '—'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Depósito CBU IVA */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                          Dep. CBU IVA:
-                        </span>
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                            <span className="text-sm sm:text-base font-black text-amber-700">
-                              {result ? formatMoneyPrecise(result.ventaNormal.depCbuIva) : '—'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Sección inferior: Monto Final Disponible (TODO ENCUADRADO) + Total Toneladas */}
-                  <div className="pt-3 mt-3 border-t border-slate-300 space-y-2.5">
-                    
-                    {/* Monto Final Disponible por Tn: TODO ENCUADRADO */}
-                    <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-xs flex items-center justify-between">
-                      <span className="text-xs sm:text-sm font-extrabold text-slate-700">
-                        Monto Final Disponible / Tn:
-                      </span>
-                      <span className="text-base sm:text-lg font-black text-slate-900">
-                        {result ? formatMoneyPrecise(result.ventaNormal.montoFinalPorTonelada) : '—'}
-                      </span>
-                    </div>
-
-                    {/* Total Toneladas a Entregar Box */}
-                    <div className="bg-white border-2 border-slate-400 rounded-xl p-3 text-center shadow-xs">
-                      <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-600 block mb-0.5">
-                        Total Toneladas a Entregar:
-                      </span>
-                      <span className="text-2xl sm:text-3xl font-black text-slate-900 block leading-tight py-0.5">
-                        {result ? formatTn(result.ventaNormal.toneladasNecesarias) : '-- Tn'}
-                      </span>
-                      <span className="text-[10.5px] text-rose-600 font-semibold block">
-                        {result ? `+ ${formatTn(result.ventaja.ahorroToneladas)} más por retenciones` : 'Cargá los parámetros para calcular'}
-                      </span>
-                    </div>
-
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* ======================================================== */}
-            {/* MÓDULO BENEFICIO DIRECTO AL PRODUCTOR                    */}
-            {/* Se extiende a lo ancho de esas dos columnas separado     */}
-            {/* ======================================================== */}
-            <div 
-              id="resumen-beneficio-productor-card"
-              className="rounded-2xl bg-gradient-to-r from-[#072a16] via-brand-green to-[#044524] text-white p-3.5 sm:p-4 lg:p-4 shadow-xl border-2 border-brand-gold relative overflow-hidden"
-            >
-              {/* Brillo sutil de fondo */}
-              <div className="absolute -top-12 -right-12 w-48 h-48 bg-brand-gold/15 rounded-full blur-3xl pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
-                
-                {/* Zona Izquierda: Título, Toneladas de Ahorro y Ventajas */}
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-brand-gold text-slate-950 text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider shadow-2xs">
-                      Beneficio Directo al Productor
-                    </span>
-                    {result && (
-                      <span className="text-[10.5px] sm:text-[11px] font-black text-brand-gold-light bg-black/30 px-2 py-0.5 rounded-full border border-brand-gold/30">
-                        +{result.ventaja.porcentajeVentaja.toFixed(2)}% de ventaja
-                      </span>
-                    )}
-                  </div>
-
+                <div className="text-sm sm:text-base font-black text-white leading-tight truncate">
                   {result ? (
-                    <div>
-                      <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-white leading-tight">
-                        Ahorrás <span className="text-brand-gold-light underline decoration-brand-gold">{formatTn(result.ventaja.ahorroToneladas)}</span> de {selectedGrain.name}
-                      </h3>
-                      <p className="text-xs text-emerald-100/90 mt-0.5 max-w-xl">
-                        Cereal que retenés en tu cuenta al evitar retenciones de AFIP (IVA y Ganancias) y el impuesto al cheque.
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-black text-white">
-                        Simulá tu operación en {selectedGrain.name}
-                      </h3>
-                    </div>
-                  )}
+                    <>Ahorrás <span className="text-brand-gold-light underline decoration-brand-gold">{formatTn(result.ventaja.ahorroToneladas)}</span></>
+                  ) : "Ingresá monto a canjear"}
                 </div>
-
-                {/* Zona Derecha: Cifra de Ahorro Económico */}
-                <div className="flex flex-col items-start md:items-end justify-center shrink-0">
-                  <div className="text-left md:text-right">
-                    <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold text-emerald-200 block">
-                      Ahorro Económico Estimado:
-                    </span>
-                    <div className="text-2xl sm:text-3xl font-black text-brand-gold-light tracking-tight leading-none my-0.5">
-                      {result
-                        ? moneda === 'USD'
-                          ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)
-                          : formatMoney(result.ventaja.ahorroMonto)
-                        : '$ 0'}
-                    </div>
-                    {result && (
-                      <span className="text-[11px] text-emerald-200 block font-semibold">
-                        {moneda === 'USD' ? (
-                          <>Equivale a <strong>{formatMoney(result.ventaja.ahorroMonto)}</strong></>
-                        ) : (
-                          <>Equivale a <strong>~ {formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)}</strong></>
-                        )}
-                      </span>
-                    )}
-                  </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-sm font-black text-brand-gold-light">
+                  {result ? (moneda === "USD" ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra) : formatMoney(result.ventaja.ahorroMonto)) : "$ 0"}
                 </div>
-
+                {result && (
+                  <span className="text-[10px] font-bold text-emerald-200 block">
+                    +{result.ventaja.porcentajeVentaja.toFixed(1)}% ventaja
+                  </span>
+                )}
               </div>
             </div>
-
           </div>
 
-    </div>
+          {/* 2. Barra de Navegación Segmentada (Pestañas estilo App nativa) */}
+          <div className="grid grid-cols-4 gap-1 bg-slate-200/90 p-1 rounded-xl text-xs font-black shadow-inner">
+            <button
+              type="button"
+              onClick={() => setMobileTab("parametros")}
+              className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
+                mobileTab === "parametros"
+                  ? "bg-black text-white shadow-xs"
+                  : "text-slate-700 hover:text-black"
+              }`}
+            >
+              Parámetros
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("canje")}
+              className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
+                mobileTab === "canje"
+                  ? "bg-brand-green text-white shadow-xs"
+                  : "text-slate-700 hover:text-black"
+              }`}
+            >
+              Canje ADG
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("normal")}
+              className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
+                mobileTab === "normal"
+                  ? "bg-slate-700 text-white shadow-xs"
+                  : "text-slate-700 hover:text-black"
+              }`}
+            >
+              Normal
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("beneficio")}
+              className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
+                mobileTab === "beneficio"
+                  ? "bg-amber-600 text-white shadow-xs"
+                  : "text-slate-700 hover:text-black"
+              }`}
+            >
+              Ahorro
+            </button>
+          </div>
+
+          {/* 3. Contenido de la pestaña activa en Mobile */}
+          <div>
+            {mobileTab === "parametros" && renderParametrosCard(true)}
+            {mobileTab === "canje" && renderCanjeCard(true)}
+            {mobileTab === "normal" && renderVentaNormalCard(true)}
+            {mobileTab === "beneficio" && renderBeneficioCard(true)}
+          </div>
+
+        </div>
+
+        {/* ======================================================== */}
+        {/* VISTA DESKTOP: Tablero Completo de 3 Columnas (>= lg)    */}
+        {/* ======================================================== */}
+        <div className="hidden lg:grid lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+          <div className="lg:col-span-4">
+            {renderParametrosCard(false)}
+          </div>
+          <div className="lg:col-span-8 flex flex-col justify-between gap-4 h-full">
+            <div className="grid grid-cols-2 gap-4 items-stretch flex-1">
+              {renderCanjeCard(false)}
+              {renderVentaNormalCard(false)}
+            </div>
+            {renderBeneficioCard(false)}
+          </div>
+        </div>
 
       </main>
 
@@ -1179,60 +1301,15 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
         </div>
       </footer>
 
-      {/* Indicador flotante destacado que avisa que más abajo está el Beneficio Directo (ideal para notebooks) */}
-      <aside 
-        aria-label="Aviso de contenido inferior"
-        className={`fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 transition-all duration-300 ease-out max-w-[92vw] sm:max-w-xl ${
-          !isBeneficioInViewport
-            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
-            : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
-        }`}
-      >
-        <button
-          type="button"
-          onClick={scrollToBeneficio}
-          className="backdrop-blur-xl bg-gradient-to-r from-slate-950/80 via-emerald-950/75 to-slate-950/80 hover:from-slate-950/90 hover:via-emerald-950/85 hover:to-slate-950/90 text-white border border-brand-gold/70 hover:border-brand-gold shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_35px_rgba(0,0,0,0.45),0_0_20px_rgba(234,179,8,0.25)] rounded-2xl sm:rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-200 group"
-          title="Hacé click para ver el Beneficio Directo al Productor y el Ahorro de Granos"
-        >
-          {/* Círculo dorado con Flecha Grande y Animación de Rebote */}
-          <div className="relative shrink-0">
-            <span className="animate-ping absolute -inset-0.5 rounded-full bg-brand-gold/60 opacity-60"></span>
-            <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-brand-gold text-slate-950 flex items-center justify-center font-black shadow-md group-hover:bg-yellow-300 transition-colors">
-              <ChevronsDown className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.8] animate-bounce" />
-            </div>
-          </div>
-
-          {/* Bloque de Textos y Datos */}
-          <div className="text-left flex-1 min-w-0">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs sm:text-[13px] font-black tracking-wide text-white uppercase truncate">
-                Beneficio Directo al Productor
-              </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-black bg-brand-gold text-slate-950 uppercase shrink-0">
-                Más abajo ↓
-              </span>
-            </div>
-            <p className="text-[11px] sm:text-xs text-emerald-300 font-medium truncate mt-0.5">
-              {result ? (
-                <>
-                  <span className="text-white font-bold">Ahorrás {formatTn(result.ventaja.ahorroToneladas)}</span>
-                  <span className="text-brand-gold font-bold ml-1 hidden xs:inline">
-                    ({moneda === 'USD' ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra) : formatMoney(result.ventaja.ahorroMonto)})
-                  </span>
-                  <span className="text-emerald-400 font-normal ml-1">en impuestos</span>
-                </>
-              ) : (
-                'Hacé clic para ver el resumen de ahorro y ventajas fiscales'
-              )}
-            </p>
-          </div>
-
-          {/* Flecha lateral secundaria que refuerza el desplazamiento hacia abajo */}
-          <div className="hidden md:flex items-center justify-center pl-1 text-brand-gold group-hover:translate-y-1 transition-transform">
-            <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-          </div>
-        </button>
-      </aside>
+      {/* Modal de Cotización y Exportación PDF / WhatsApp */}
+      <CanjeQuoteExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        result={result}
+        config={config}
+        moneda={moneda}
+        selectedGrainId={selectedGrainId}
+      />
 
     </div>
   );
