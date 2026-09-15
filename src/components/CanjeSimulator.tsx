@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  ChevronsDown,
+  ArrowDown,
   Printer,
   Truck,
   RefreshCw,
@@ -84,6 +86,53 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
   // Estado de UI para desplegables y modales
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // Detección de visibilidad del módulo de Beneficio Directo para avisar al usuario en notebooks/pantallas bajas
+  const [isBeneficioInViewport, setIsBeneficioInViewport] = useState(false);
+
+  useEffect(() => {
+    const beneficioEl = document.getElementById('resumen-beneficio-productor-card');
+    if (!beneficioEl) return;
+
+    const checkVisibility = () => {
+      const rect = beneficioEl.getBoundingClientRect();
+      const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+      // Consideramos visible si al menos el 25% del card está dentro del viewport visible
+      const isVisible = rect.top < windowHeight - 50 && rect.bottom > 80;
+      setIsBeneficioInViewport(isVisible);
+    };
+
+    // Ejecutar chequeo inicial
+    checkVisibility();
+
+    // IntersectionObserver con fallback a scroll listener
+    let observer: IntersectionObserver | null = null;
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsBeneficioInViewport(entry.isIntersecting && entry.intersectionRatio > 0.2);
+        },
+        { threshold: [0, 0.2, 0.5, 0.8] }
+      );
+      observer.observe(beneficioEl);
+    }
+
+    window.addEventListener('scroll', checkVisibility, { passive: true });
+    window.addEventListener('resize', checkVisibility, { passive: true });
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('scroll', checkVisibility);
+      window.removeEventListener('resize', checkVisibility);
+    };
+  }, []);
+
+  const scrollToBeneficio = () => {
+    const el = document.getElementById('resumen-beneficio-productor-card');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
 
   // Referencias para evitar stale closures en el intervalo de actualización periódica
   const selectedGrainIdRef = useRef(selectedGrainId);
@@ -998,6 +1047,19 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                       </span>
                     </div>
 
+                    {/* Enlace interactivo destacado hacia el Beneficio Directo */}
+                    <button
+                      type="button"
+                      onClick={scrollToBeneficio}
+                      className="w-full mt-2.5 py-1.5 px-3 bg-emerald-100/90 hover:bg-emerald-200 text-emerald-900 border border-emerald-300/80 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer group shadow-xs"
+                      title="Ver cálculo detallado del Beneficio Directo al Productor abajo"
+                    >
+                      <span>Ver Beneficio Directo al Productor</span>
+                      <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center group-hover:translate-y-0.5 transition-transform shadow-xs">
+                        <ArrowDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    </button>
+
                   </div>
                 </div>
 
@@ -1153,6 +1215,19 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                         {result ? `+ ${formatTn(result.ventaja.ahorroToneladas)} más por retenciones` : 'Cargá los parámetros para calcular'}
                       </span>
                     </div>
+
+                    {/* Enlace interactivo hacia la comparativa */}
+                    <button
+                      type="button"
+                      onClick={scrollToBeneficio}
+                      className="w-full mt-2.5 py-1.5 px-3 bg-slate-200/90 hover:bg-slate-300 text-slate-800 border border-slate-300/80 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer group shadow-xs"
+                      title="Comparar ventajas impositivas del canje abajo"
+                    >
+                      <span>Comparar ventajas impositivas</span>
+                      <div className="w-5 h-5 rounded-full bg-slate-700 text-white flex items-center justify-center group-hover:translate-y-0.5 transition-transform shadow-xs">
+                        <ArrowDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    </button>
 
                   </div>
                 </div>
@@ -1356,6 +1431,61 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
         moneda={moneda}
         selectedGrainId={selectedGrainId}
       />
+
+      {/* Indicador flotante destacado que avisa que más abajo está el Beneficio Directo (ideal para notebooks) */}
+      <aside 
+        aria-label="Aviso de contenido inferior"
+        className={`fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 transition-all duration-300 ease-out max-w-[92vw] sm:max-w-xl ${
+          !isBeneficioInViewport
+            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+            : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={scrollToBeneficio}
+          className="backdrop-blur-xl bg-gradient-to-r from-slate-950/80 via-emerald-950/75 to-slate-950/80 hover:from-slate-950/90 hover:via-emerald-950/85 hover:to-slate-950/90 text-white border border-brand-gold/70 hover:border-brand-gold shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_35px_rgba(0,0,0,0.45),0_0_20px_rgba(234,179,8,0.25)] rounded-2xl sm:rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-200 group"
+          title="Hacé click para ver el Beneficio Directo al Productor y el Ahorro de Granos"
+        >
+          {/* Círculo dorado con Flecha Grande y Animación de Rebote */}
+          <div className="relative shrink-0">
+            <span className="animate-ping absolute -inset-0.5 rounded-full bg-brand-gold/60 opacity-60"></span>
+            <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-brand-gold text-slate-950 flex items-center justify-center font-black shadow-md group-hover:bg-yellow-300 transition-colors">
+              <ChevronsDown className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.8] animate-bounce" />
+            </div>
+          </div>
+
+          {/* Bloque de Textos y Datos */}
+          <div className="text-left flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs sm:text-[13px] font-black tracking-wide text-white uppercase truncate">
+                Beneficio Directo al Productor
+              </span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-black bg-brand-gold text-slate-950 uppercase shrink-0">
+                Más abajo ↓
+              </span>
+            </div>
+            <p className="text-[11px] sm:text-xs text-emerald-300 font-medium truncate mt-0.5">
+              {result ? (
+                <>
+                  <span className="text-white font-bold">Ahorrás {formatTn(result.ventaja.ahorroToneladas)}</span>
+                  <span className="text-brand-gold font-bold ml-1 hidden xs:inline">
+                    ({moneda === 'USD' ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.venta) : formatMoney(result.ventaja.ahorroMonto)})
+                  </span>
+                  <span className="text-emerald-400 font-normal ml-1">en impuestos</span>
+                </>
+              ) : (
+                'Hacé clic para ver el resumen de ahorro y ventajas fiscales'
+              )}
+            </p>
+          </div>
+
+          {/* Flecha lateral secundaria que refuerza el desplazamiento hacia abajo */}
+          <div className="hidden md:flex items-center justify-center pl-1 text-brand-gold group-hover:translate-y-1 transition-transform">
+            <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+          </div>
+        </button>
+      </aside>
 
     </div>
   );
