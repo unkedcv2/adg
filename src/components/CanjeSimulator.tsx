@@ -32,6 +32,8 @@ import GrainIcon from './GrainIcons';
 import CanjeQuoteExportModal from './CanjeQuoteExportModal';
 // @ts-ignore
 import adgLogoBlanco from '../assets/images/LOGO SIN ALMACEN DE GRANOS BLANCO.png';
+// @ts-ignore
+import fondoSimu from '../assets/images/fondo_simu.jfif';
 import {
   GrainItem,
   SisaScoreOption,
@@ -68,17 +70,30 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   // Moneda activa: 'ARS' (Pesos) o 'USD' (Dólares BNA)
   const [moneda, setMoneda] = useState<'ARS' | 'USD'>('ARS');
 
+  // Helper para formatear números de inputs con punto separando miles (ej: 5.500)
+  const formatInputWithDots = (val: number | ''): string => {
+    if (val === '' || val === null || val === undefined) return '';
+    if (typeof val === 'number') {
+      if (Number.isInteger(val)) {
+        return val.toLocaleString('es-AR');
+      }
+      return val.toLocaleString('es-AR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      });
+    }
+    return String(val);
+  };
+
   // Parámetros principales del Simulador (emulando la hoja Simulador del Excel)
   const [montoACanjear, setMontoACanjear] = useState<number | ''>('');
+  const [montoStr, setMontoStr] = useState<string>('');
   const [selectedGrainId, setSelectedGrainId] = useState<string>('soja');
   const [precioPorTonelada, setPrecioPorTonelada] = useState<number | ''>(555000);
+  const [precioStr, setPrecioStr] = useState<string>('555.000');
   const [isPriceCustom, setIsPriceCustom] = useState(false);
   const [selectedSisaId, setSelectedSisaId] = useState<1 | 2 | 3>(2);
   const correspondeIibbBsAs = false;
-
-  // Parámetros manuales para SISA 3 (si aplica)
-  const [retIvaManualSisa3, setRetIvaManualSisa3] = useState<number | ''>(8);
-  const [retGanManualSisa3, setRetGanManualSisa3] = useState<number | ''>(15);
 
   // Estado de navegación móvil adaptada a pantallas táctiles (Estilo App)
   const [mobileTab, setMobileTab] = useState<'parametros' | 'canje' | 'normal' | 'beneficio'>('parametros');
@@ -162,7 +177,9 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             const liveGrain = liveData.grains[selectedGrainIdRef.current];
             if (liveGrain) {
               const p = plazaRef.current === 'bahia_blanca' ? liveGrain.bahiaARS : liveGrain.rosarioARS;
-              return monedaRef.current === 'USD' ? Number((p / (config.dolarBNA?.compra || 1499)).toFixed(2)) : p;
+              const val = monedaRef.current === 'USD' ? Number((p / (config.dolarBNA?.compra || 1499)).toFixed(2)) : p;
+              setPrecioStr(formatInputWithDots(val));
+              return val;
             }
             return prevPrice;
           });
@@ -234,17 +251,25 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
     if (newMoneda === 'USD') {
       if (montoACanjear !== '' && typeof montoACanjear === 'number') {
-        setMontoACanjear(Math.round(montoACanjear / config.dolarBNA.compra));
+        const newM = Math.round(montoACanjear / config.dolarBNA.compra);
+        setMontoACanjear(newM);
+        setMontoStr(formatInputWithDots(newM));
       }
       if (precioPorTonelada !== '' && typeof precioPorTonelada === 'number') {
-        setPrecioPorTonelada(Number((precioPorTonelada / config.dolarBNA.compra).toFixed(2)));
+        const newP = Number((precioPorTonelada / config.dolarBNA.compra).toFixed(2));
+        setPrecioPorTonelada(newP);
+        setPrecioStr(formatInputWithDots(newP));
       }
     } else {
       if (montoACanjear !== '' && typeof montoACanjear === 'number') {
-        setMontoACanjear(Math.round(montoACanjear * config.dolarBNA.compra));
+        const newM = Math.round(montoACanjear * config.dolarBNA.compra);
+        setMontoACanjear(newM);
+        setMontoStr(formatInputWithDots(newM));
       }
       if (precioPorTonelada !== '' && typeof precioPorTonelada === 'number') {
-        setPrecioPorTonelada(Math.round(precioPorTonelada * config.dolarBNA.compra));
+        const newP = Math.round(precioPorTonelada * config.dolarBNA.compra);
+        setPrecioPorTonelada(newP);
+        setPrecioStr(formatInputWithDots(newP));
       }
     }
   };
@@ -256,6 +281,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
     if (g) {
       const p = getGrainPriceForCurrency(g, plaza, moneda);
       setPrecioPorTonelada(p);
+      setPrecioStr(formatInputWithDots(p));
       setIsPriceCustom(false);
     }
   };
@@ -265,6 +291,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
     if (!isPriceCustom && selectedGrain) {
       const p = getGrainPriceForCurrency(selectedGrain, newPlaza, moneda);
       setPrecioPorTonelada(p);
+      setPrecioStr(formatInputWithDots(p));
     }
   };
 
@@ -272,8 +299,74 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
     if (selectedGrain) {
       const p = getGrainPriceForCurrency(selectedGrain, plaza, moneda);
       setPrecioPorTonelada(p);
+      setPrecioStr(formatInputWithDots(p));
       setIsPriceCustom(false);
     }
+  };
+
+  // Manejador de input para Monto con punto separando miles (ej: 5.500)
+  const handleMontoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw.trim() === '') {
+      setMontoStr('');
+      setMontoACanjear('');
+      return;
+    }
+    const withoutDots = raw.replace(/\./g, '');
+    const parts = withoutDots.split(/[,]/);
+    const intDigits = parts[0].replace(/\D/g, '');
+    if (!intDigits && parts.length === 1) {
+      setMontoStr('');
+      setMontoACanjear('');
+      return;
+    }
+    const intNum = intDigits ? parseInt(intDigits, 10) : 0;
+    const formattedInt = intDigits ? intNum.toLocaleString('es-AR') : '';
+    
+    const hasComma = raw.includes(',');
+    const decDigits = parts.length > 1 ? parts[1].replace(/\D/g, '').slice(0, 2) : '';
+    
+    let display = formattedInt;
+    if (hasComma) {
+      display += ',' + decDigits;
+    }
+    
+    setMontoStr(display);
+    const fullNum = decDigits ? parseFloat(`${intNum}.${decDigits}`) : intNum;
+    setMontoACanjear(fullNum > 0 ? fullNum : '');
+  };
+
+  // Manejador de input para Precio por Tn con punto separando miles (ej: 5.500)
+  const handlePrecioInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setIsPriceCustom(true);
+    if (raw.trim() === '') {
+      setPrecioStr('');
+      setPrecioPorTonelada('');
+      return;
+    }
+    const withoutDots = raw.replace(/\./g, '');
+    const parts = withoutDots.split(/[,]/);
+    const intDigits = parts[0].replace(/\D/g, '');
+    if (!intDigits && parts.length === 1) {
+      setPrecioStr('');
+      setPrecioPorTonelada('');
+      return;
+    }
+    const intNum = intDigits ? parseInt(intDigits, 10) : 0;
+    const formattedInt = intDigits ? intNum.toLocaleString('es-AR') : '';
+    
+    const hasComma = raw.includes(',');
+    const decDigits = parts.length > 1 ? parts[1].replace(/\D/g, '').slice(0, 2) : '';
+    
+    let display = formattedInt;
+    if (hasComma) {
+      display += ',' + decDigits;
+    }
+    
+    setPrecioStr(display);
+    const fullNum = decDigits ? parseFloat(`${intNum}.${decDigits}`) : intNum;
+    setPrecioPorTonelada(fullNum > 0 ? fullNum : '');
   };
 
   // Cálculo exacto del Excel
@@ -291,8 +384,8 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
         precioPorTonelada: precioCalculadoARS,
         sisaScore: selectedSisaId,
         correspondeIibbBsAs,
-        retencionIvaManualSisa3: selectedSisaId === 3 ? Number(retIvaManualSisa3 || 0) : 0,
-        retencionGananciasManualSisa3: selectedSisaId === 3 ? Number(retGanManualSisa3 || 0) : 0,
+        retencionIvaManualSisa3: 0,
+        retencionGananciasManualSisa3: 0,
         granoNombre: selectedGrain.name,
         plazaSeleccionada: plaza
       },
@@ -303,8 +396,6 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
     precioCalculadoARS,
     selectedSisaId,
     correspondeIibbBsAs,
-    retIvaManualSisa3,
-    retGanManualSisa3,
     selectedGrain,
     plaza,
     config.parametros
@@ -381,38 +472,38 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   // FUNCIONES DE RENDERIZADO MODULARES PARA VISTA DESKTOP Y EXPERIENCIA MOBILE
   // =========================================================================
   const renderParametrosCard = (isMobile = false) => (
-    <div className="rounded-2xl bg-black text-white p-4 sm:p-5 shadow-xl flex flex-col justify-between border-2 border-slate-800 h-full">
+    <div className="rounded-2xl bg-slate-50 text-gray-900 p-4 sm:p-5 shadow-xs flex flex-col justify-between border border-gray-300 h-full">
       <div>
         {/* Título de Parámetros */}
-        <div className="border-b border-white/15 pb-2.5 mb-3 flex items-center justify-between">
+        <div className="border-b border-gray-200 pb-2.5 mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+            <h2 className="text-lg sm:text-xl font-black tracking-tight text-gray-900">
               Parámetros
             </h2>
           </div>
-          <div className="p-1.5 rounded-lg bg-white/10 text-brand-gold">
+          <div className="p-1.5 rounded-lg bg-amber-100 text-brand-gold-dark">
             <Coins className="w-5 h-5" />
           </div>
         </div>
 
         {/* Resumen rápido para móvil si ya hay resultado */}
         {isMobile && result && (
-          <div className="mb-3 p-2.5 bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-brand-green/40 rounded-xl flex items-center justify-between">
+          <div className="mb-3 p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between">
             <div className="text-left">
-              <span className="text-[10px] font-bold text-gray-300 uppercase block leading-none">Entregás en Canje:</span>
-              <span className="text-sm font-black text-brand-gold-light">{formatTn(result.canje.toneladasNecesarias)}</span>
+              <span className="text-[10px] font-bold text-gray-600 uppercase block leading-none">Entregás en Canje:</span>
+              <span className="text-sm font-black text-emerald-900">{formatTn(result.canje.toneladasNecesarias)}</span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-bold text-emerald-400 uppercase block leading-none">Ahorrás:</span>
-              <span className="text-sm font-black text-emerald-300">+{formatTn(result.ventaja.ahorroToneladas)}</span>
+              <span className="text-[10px] font-bold text-emerald-700 uppercase block leading-none">Ahorrás:</span>
+              <span className="text-sm font-black text-emerald-700">+{formatTn(result.ventaja.ahorroToneladas)}</span>
             </div>
           </div>
         )}
 
         {/* Selector de Moneda: ARS vs USD */}
-        <div className="bg-white/10 p-1 rounded-xl border border-white/15 mb-3 flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-300 pl-1.5 flex items-center space-x-1">
-            <DollarSign className="w-3.5 h-3.5 text-brand-gold" />
+        <div className="bg-white p-1 rounded-xl border border-gray-200 mb-3 flex items-center justify-between shadow-2xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-700 pl-1.5 flex items-center space-x-1">
+            <DollarSign className="w-3.5 h-3.5 text-brand-gold-dark" />
             <span>Moneda:</span>
           </span>
           <div className="flex items-center space-x-1">
@@ -422,7 +513,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                 moneda === 'ARS'
                   ? 'bg-brand-gold text-slate-950 shadow-xs'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               Pesos
@@ -433,7 +524,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                 moneda === 'USD'
                   ? 'bg-brand-gold text-slate-950 shadow-xs'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               Dólar
@@ -446,36 +537,31 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           
           {/* 1. Monto a Canjear */}
           <div>
-            <label htmlFor="param-monto-canjear" className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
+            <label htmlFor="param-monto-canjear" className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 flex items-center justify-between">
               <span>
-                Monto a Canjear ({moneda === 'USD' ? 'USD' : '$ ARS'}) <span className="text-brand-gold font-bold">*</span>
+                Monto a Canjear ({moneda === 'USD' ? 'USD' : '$ ARS'}) <span className="text-brand-gold-dark font-bold">*</span>
               </span>
               {(montoACanjear === '' || montoACanjear <= 0) && (
-                <span className="text-[10px] text-amber-400 font-normal normal-case">Obligatorio</span>
+                <span className="text-[10px] text-amber-600 font-medium normal-case">Obligatorio</span>
               )}
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-extrabold text-sm pointer-events-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-extrabold text-sm pointer-events-none">
                 {moneda === 'USD' ? 'USD' : '$'}
               </span>
               <input
                 id="param-monto-canjear"
-                type="number"
+                type="text"
                 inputMode="decimal"
-                min={1}
-                step={moneda === 'USD' ? 100 : 10000}
-                value={montoACanjear === '' ? '' : montoACanjear}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setMontoACanjear(val === '' ? '' : Math.max(0, Number(val)));
-                }}
+                value={montoStr}
+                onChange={handleMontoInputChange}
                 placeholder={moneda === 'USD' ? 'Ej: 50.000' : 'Ej: 100.000.000'}
-                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs placeholder:text-gray-400 placeholder:font-normal`}
+                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border border-gray-300 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold focus:outline-none shadow-2xs placeholder:text-gray-400 placeholder:font-normal`}
                 required
               />
             </div>
             {montoCalculadoARS > 0 && (
-              <p className="text-[10.5px] text-gray-400 mt-0.5">
+              <p className="text-[10.5px] text-gray-500 mt-0.5">
                 {moneda === 'USD' ? (
                   <>Equivale a <strong>{formatMoney(montoCalculadoARS)}</strong> al Dólar BNA Divisa Compra (${config.dolarBNA.compra})</>
                 ) : (
@@ -488,10 +574,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           {/* 2. Tipo de Grano a Entregar */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label htmlFor="param-grano" className="block text-xs font-bold uppercase tracking-wider text-gray-300">
-                Grano a Entregar <span className="text-brand-gold font-bold">*</span>
+              <label htmlFor="param-grano" className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                Grano a Entregar <span className="text-brand-gold-dark font-bold">*</span>
               </label>
-              <span className="text-[10.5px] text-gray-400 font-medium">
+              <span className="text-[10.5px] text-gray-500 font-medium">
                 Plaza {plaza === 'bahia_blanca' ? 'Bahía Blanca' : 'Rosario'}
               </span>
             </div>
@@ -504,7 +590,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                 id="param-grano"
                 value={selectedGrainId}
                 onChange={(e) => handleSelectGrain(e.target.value)}
-                className="w-full bg-white text-gray-900 rounded-lg pl-10 pr-9 py-2 text-xs sm:text-sm font-extrabold uppercase border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs appearance-none cursor-pointer"
+                className="w-full bg-white text-gray-900 rounded-lg pl-10 pr-9 py-2 text-xs sm:text-sm font-extrabold uppercase border border-gray-300 focus:border-brand-gold focus:outline-none shadow-2xs appearance-none cursor-pointer"
               >
                 {config.grains.map((g) => (
                   <option key={g.id} value={g.id} className="py-2 font-bold text-gray-900 uppercase">
@@ -521,14 +607,14 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           {/* 3. Precio por Tonelada */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label htmlFor="param-precio-tn" className="block text-xs font-bold uppercase tracking-wider text-gray-300">
-                Precio ({moneda === 'USD' ? 'USD / Tn' : '$ / Tn'}) <span className="text-brand-gold font-bold">*</span>
+              <label htmlFor="param-precio-tn" className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                Precio ({moneda === 'USD' ? 'USD / Tn' : '$ / Tn'}) <span className="text-brand-gold-dark font-bold">*</span>
               </label>
               {isPriceCustom && (
                 <button
                   type="button"
                   onClick={handleResetToPizarra}
-                  className="text-[10px] text-brand-gold-light hover:underline flex items-center space-x-1 cursor-pointer"
+                  className="text-[10px] text-brand-green hover:underline flex items-center space-x-1 cursor-pointer font-bold"
                   title="Restablecer al valor oficial de pizarra"
                 >
                   <RefreshCw className="w-2.5 h-2.5" />
@@ -539,26 +625,21 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               )}
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-extrabold text-sm pointer-events-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-extrabold text-sm pointer-events-none">
                 {moneda === 'USD' ? 'USD' : '$'}
               </span>
               <input
                 id="param-precio-tn"
-                type="number"
+                type="text"
                 inputMode="decimal"
-                min={1}
-                step={moneda === 'USD' ? 0.5 : 100}
-                value={precioPorTonelada === '' ? '' : precioPorTonelada}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setPrecioPorTonelada(val === '' ? '' : Math.max(0, Number(val)));
-                  setIsPriceCustom(true);
-                }}
-                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs`}
+                value={precioStr}
+                onChange={handlePrecioInputChange}
+                placeholder={moneda === 'USD' ? 'Ej: 350' : 'Ej: 550.000'}
+                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border border-gray-300 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold focus:outline-none shadow-2xs`}
                 required
               />
             </div>
-            <p className="text-[10px] text-gray-400 mt-0.5 flex items-center justify-between">
+            <p className="text-[10px] text-gray-500 mt-0.5 flex items-center justify-between">
               <span>
                 {moneda === 'USD' ? (
                   <>Equivale a <strong>{formatMoney(precioCalculadoARS)}/Tn</strong>. Editable a mano.</>
@@ -571,72 +652,35 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
           {/* 4. Score SISA */}
           <div>
-            <label htmlFor="param-sisa" className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
-              <span>Score SISA (ARCA / AFIP) <span className="text-brand-gold font-bold">*</span></span>
+            <label htmlFor="param-sisa" className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 flex items-center justify-between">
+              <span>Score SISA <span className="text-brand-gold-dark font-bold">*</span></span>
             </label>
             <select
               id="param-sisa"
               value={selectedSisaId}
               onChange={(e) => setSelectedSisaId(Number(e.target.value) as 1 | 2 | 3)}
-              className="w-full bg-white text-gray-900 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold border-2 border-transparent focus:border-brand-gold focus:outline-none shadow-xs cursor-pointer"
+              className="w-full bg-white text-gray-900 rounded-lg px-3 py-2 text-xs sm:text-sm font-bold border border-gray-300 focus:border-brand-gold focus:outline-none shadow-2xs cursor-pointer"
             >
               {config.sisaOptions.map((s) => (
                 <option key={s.id} value={s.id} className="text-gray-900 font-bold">
-                  {s.name} - {s.statusLabel}
+                  {s.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Campos opcionales si se selecciona SISA Estado 3 */}
-          {selectedSisaId === 3 && (
-            <div className="bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/40 space-y-2 text-xs">
-              <span className="font-extrabold text-amber-200 block text-[11px] uppercase tracking-wider">
-                Alícuotas Manuales Canje (SISA 3)
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-amber-100 block mb-0.5">Ret. IVA Canje (%)</label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    max={100}
-                    value={retIvaManualSisa3}
-                    onChange={(e) => setRetIvaManualSisa3(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-white text-gray-900 px-2.5 py-1.5 rounded-lg font-bold text-xs"
-                    placeholder="8"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-amber-100 block mb-0.5">Ret. Ganancias (%)</label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    max={100}
-                    value={retGanManualSisa3}
-                    onChange={(e) => setRetGanManualSisa3(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-white text-gray-900 px-2.5 py-1.5 rounded-lg font-bold text-xs"
-                    placeholder="15"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Recuadro de notas aclaratorias */}
-          <div className="mt-3 p-3 bg-white/10 rounded-xl border border-white/15 text-[11px] text-gray-300 space-y-2 leading-relaxed">
+          <div className="mt-3 p-3 bg-white rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-2 leading-relaxed shadow-2xs">
             <p className="flex items-start gap-1.5">
-              <span className="text-brand-gold font-black">•</span>
+              <span className="text-brand-gold-dark font-black">•</span>
               <span>Cotización con precio pizarra del día. Ajustable a condiciones comerciales de cooperativa o acopio.</span>
             </p>
             <p className="flex items-start gap-1.5">
-              <span className="text-brand-gold font-black">•</span>
+              <span className="text-brand-gold-dark font-black">•</span>
               <span>La simulación no contempla condiciones comerciales de acopio o cooperativa y es a modo de referencia.</span>
             </p>
             <p className="flex items-start gap-1.5">
-              <span className="text-brand-gold font-black">•</span>
+              <span className="text-brand-gold-dark font-black">•</span>
               <span>El productor obtiene un ahorro del 1,2% correspondiente al impuesto al débito y crédito bancario, el cual no se encuentra reflejado en la simulación.</span>
             </p>
           </div>
@@ -646,7 +690,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
       {/* Botones de acción rápida para vista mobile */}
       {isMobile && (
-        <div className="pt-4 mt-4 border-t border-white/15 grid grid-cols-2 gap-2.5">
+        <div className="pt-4 mt-4 border-t border-gray-200 grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => setMobileTab('canje')}
@@ -718,17 +762,15 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               </div>
             </div>
 
-            {/* 2. Retención IVA AFIP */}
+            {/* 2. Retención IVA */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                Ret. IVA AFIP ({selectedSisaId === 3 && retIvaManualSisa3 ? `${retIvaManualSisa3}%` : '0%'}):
+                Ret. IVA (0%):
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
                   <span className="text-sm sm:text-base font-black text-emerald-700">
-                    {result && result.canje.retencionIva < 0
-                      ? formatMoneyPrecise(result.canje.retencionIva)
-                      : '$ 0,00 (0%)'}
+                    $ 0,00 (0%)
                   </span>
                 </div>
               </div>
@@ -737,14 +779,12 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             {/* 3. Retención Ganancias */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                Ret. Ganancias ({selectedSisaId === 3 && retGanManualSisa3 ? `${retGanManualSisa3}%` : '0%'}):
+                Ret. Ganancias (0%):
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
                   <span className="text-sm sm:text-base font-black text-emerald-700">
-                    {result && result.canje.retencionGanancias < 0
-                      ? formatMoneyPrecise(result.canje.retencionGanancias)
-                      : '$ 0,00 (0%)'}
+                    $ 0,00 (0%)
                   </span>
                 </div>
               </div>
@@ -788,9 +828,11 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             <span className="text-2xl sm:text-3xl font-black text-brand-green-dark block leading-tight py-0.5">
               {result ? formatTn(result.canje.toneladasNecesarias) : '-- Tn'}
             </span>
-            <span className="text-[10.5px] text-emerald-800 font-semibold block">
-              {result ? 'Menor cantidad de cereal gracias al canje' : 'Ingresá el monto de la operación para calcular'}
-            </span>
+            {!result && (
+              <span className="text-[10.5px] text-emerald-800 font-semibold block">
+                Ingresá el monto de la operación para calcular
+              </span>
+            )}
           </div>
 
         </div>
@@ -865,7 +907,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             {/* Retención IVA SISA */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                Ret. IVA AFIP ({selectedSisaId === 1 ? '5%' : selectedSisaId === 2 ? '7%' : '8%'}):
+                Ret. IVA ({selectedSisaId === 1 ? '5%' : selectedSisaId === 2 ? '7%' : '8%'}):
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
@@ -928,9 +970,11 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             <span className="text-2xl sm:text-3xl font-black text-slate-900 block leading-tight py-0.5">
               {result ? formatTn(result.ventaNormal.toneladasNecesarias) : '-- Tn'}
             </span>
-            <span className="text-[10.5px] text-rose-600 font-semibold block">
-              {result ? `+ ${formatTn(result.ventaja.ahorroToneladas)} más por retenciones` : 'Cargá los parámetros para calcular'}
-            </span>
+            {!result && (
+              <span className="text-[10.5px] text-rose-600 font-semibold block">
+                Cargá los parámetros para calcular
+              </span>
+            )}
           </div>
 
         </div>
@@ -962,21 +1006,21 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   const renderBeneficioCard = (isMobile = false) => (
     <div 
       id="resumen-beneficio-productor-card"
-      className="rounded-2xl bg-gradient-to-r from-[#072a16] via-brand-green to-[#044524] text-white p-4 sm:p-5 shadow-xl border-2 border-brand-gold relative overflow-hidden"
+      className="rounded-2xl bg-emerald-50/90 text-gray-900 p-4 sm:p-5 shadow-xs border-2 border-emerald-500/80 relative overflow-hidden"
     >
-      {/* Brillo sutil de fondo */}
-      <div className="absolute -top-12 -right-12 w-48 h-48 bg-brand-gold/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Brillo sutil de fondo muy tenue */}
+      <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-200/30 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
         
         {/* Zona Izquierda: Título, Toneladas de Ahorro y Ventajas */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-brand-gold text-slate-950 text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider shadow-2xs">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider shadow-2xs">
               Beneficio Directo al Productor
             </span>
             {result && (
-              <span className="text-[10.5px] sm:text-[11px] font-black text-brand-gold-light bg-black/30 px-2 py-0.5 rounded-full border border-brand-gold/30">
+              <span className="text-[10.5px] sm:text-[11px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
                 +{result.ventaja.porcentajeVentaja.toFixed(2)}% de ventaja
               </span>
             )}
@@ -984,13 +1028,13 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
           {result ? (
             <div>
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-white leading-tight">
-                Ahorrás <span className="text-brand-gold-light underline decoration-brand-gold">{formatTn(result.ventaja.ahorroToneladas)}</span> de {selectedGrain.name}
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-tight">
+                Ahorrás <span className="text-emerald-700 underline decoration-emerald-500">{formatTn(result.ventaja.ahorroToneladas)}</span> de {selectedGrain.name}
               </h3>
             </div>
           ) : (
             <div>
-              <h3 className="text-lg sm:text-xl font-black text-white">
+              <h3 className="text-lg sm:text-xl font-black text-gray-900">
                 Simulá tu operación en {selectedGrain.name}
               </h3>
             </div>
@@ -1000,10 +1044,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
         {/* Zona Derecha: Cifra de Ahorro Económico */}
         <div className="flex flex-col items-start md:items-end justify-center shrink-0">
           <div className="text-left md:text-right">
-            <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold text-emerald-200 block">
+            <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold text-emerald-800 block">
               Ahorro Económico Estimado:
             </span>
-            <div className="text-2xl sm:text-3xl font-black text-brand-gold-light tracking-tight leading-none my-0.5">
+            <div className="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight leading-none my-0.5">
               {result
                 ? moneda === 'USD'
                   ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)
@@ -1011,7 +1055,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                 : '$ 0'}
             </div>
             {result && (
-              <span className="text-[11px] text-emerald-200 block font-semibold">
+              <span className="text-[11px] text-emerald-700 block font-semibold">
                 {moneda === 'USD' ? (
                   <>Equivale a <strong>{formatMoney(result.ventaja.ahorroMonto)}</strong></>
                 ) : (
@@ -1027,7 +1071,19 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   );
 
   return (
-    <div id="canje-simulator-page" className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans w-full overflow-x-clip">
+    <div id="canje-simulator-page" className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans w-full overflow-x-clip relative">
+      {/* Fondo temático con fondo_simu.jfif, mayor presencia para contrastar con las tarjetas */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.24]"
+          style={{ backgroundImage: `url(${fondoSimu})` }}
+        />
+        {/* Degradado equilibrado que resalta los bloques de parámetros y resultados */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-100/60 via-slate-50/15 to-slate-100/75" />
+      </div>
       
       {/* ============================================================ */}
       {/* HEADER PRINCIPAL: Marca ADG a la izquierda y Dólar BNA derecha*/}
@@ -1192,7 +1248,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
       {/* ============================================================ */}
       {/* CONTENIDO PRINCIPAL: Simulador de Canje vs Venta Tradicional  */}
       {/* ============================================================ */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 sm:pb-10">
+      <main className="relative z-10 flex-grow max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 sm:pb-10">
         
         {/* ======================================================== */}
         {/* VISTA MOBILE DEDICADA: Experiencia tipo App (< lg)        */}
@@ -1202,25 +1258,25 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           {/* 1. Tarjeta Hero de Ahorro Rápido en Vivo */}
           <div 
             onClick={() => setMobileTab("beneficio")}
-            className="bg-gradient-to-r from-[#072a16] via-brand-green to-[#044524] text-white p-3.5 rounded-2xl border border-brand-gold/60 shadow-md cursor-pointer active:scale-[0.99] transition-all"
+            className="bg-emerald-50/95 text-gray-900 p-3.5 rounded-2xl border-2 border-emerald-500/70 shadow-xs cursor-pointer active:scale-[0.99] transition-all"
           >
             <div className="flex items-center justify-between">
               <div className="min-w-0 pr-2">
-                <span className="text-[10px] uppercase font-extrabold tracking-wider text-brand-gold-light block leading-tight">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-emerald-800 block leading-tight">
                   Ahorro al Productor:
                 </span>
-                <div className="text-sm sm:text-base font-black text-white leading-tight truncate">
+                <div className="text-sm sm:text-base font-black text-gray-900 leading-tight truncate">
                   {result ? (
-                    <>Ahorrás <span className="text-brand-gold-light underline decoration-brand-gold">{formatTn(result.ventaja.ahorroToneladas)}</span></>
+                    <>Ahorrás <span className="text-emerald-700 underline decoration-emerald-500">{formatTn(result.ventaja.ahorroToneladas)}</span></>
                   ) : "Ingresá monto a canjear"}
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-sm font-black text-brand-gold-light">
+                <div className="text-sm sm:text-base font-black text-emerald-950">
                   {result ? (moneda === "USD" ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra) : formatMoney(result.ventaja.ahorroMonto)) : "$ 0"}
                 </div>
                 {result && (
-                  <span className="text-[10px] font-bold text-emerald-200 block">
+                  <span className="text-[10px] font-bold text-emerald-700 block">
                     +{result.ventaja.porcentajeVentaja.toFixed(1)}% ventaja
                   </span>
                 )}
@@ -1235,7 +1291,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               onClick={() => setMobileTab("parametros")}
               className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
                 mobileTab === "parametros"
-                  ? "bg-black text-white shadow-xs"
+                  ? "bg-slate-800 text-white shadow-xs"
                   : "text-slate-700 hover:text-black"
               }`}
             >
