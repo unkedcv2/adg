@@ -1011,60 +1011,46 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
       {/* Brillo sutil de fondo muy tenue */}
       <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-200/30 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+      <div className="relative z-10">
         
-        {/* Zona Izquierda: Título, Toneladas de Ahorro y Ventajas */}
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10.5px] sm:text-[11px] font-black uppercase tracking-wider shadow-2xs">
-              Beneficio Directo al Productor
+        {/* Fila principal con recuadros idénticos en ancho, estructura y tamaño de valor */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          
+          {/* Lado Izquierdo: Ahorro en Toneladas */}
+          <div className="bg-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl border border-emerald-300/90 shadow-2xs w-full flex flex-col justify-center">
+            <span className="text-[10px] sm:text-[11px] uppercase font-black tracking-wider text-emerald-800 block">
+              Ahorrás:
             </span>
-            {result && (
-              <span className="text-[10.5px] sm:text-[11px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                +{result.ventaja.porcentajeVentaja.toFixed(2)}% de ventaja
-              </span>
-            )}
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-950 tracking-tight leading-none my-1">
+              {result ? formatTn(result.ventaja.ahorroToneladas) : '0,00 Tn'}
+            </div>
           </div>
 
-          {result ? (
-            <div>
-              <h3 className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-tight">
-                Ahorrás <span className="text-emerald-700 underline decoration-emerald-500">{formatTn(result.ventaja.ahorroToneladas)}</span> de {selectedGrain.name}
-              </h3>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-lg sm:text-xl font-black text-gray-900">
-                Simulá tu operación en {selectedGrain.name}
-              </h3>
-            </div>
-          )}
-        </div>
-
-        {/* Zona Derecha: Cifra de Ahorro Económico */}
-        <div className="flex flex-col items-start md:items-end justify-center shrink-0">
-          <div className="text-left md:text-right">
-            <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold text-emerald-800 block">
+          {/* Lado Derecho: Ahorro Económico Estimado */}
+          <div className="bg-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl border border-emerald-300/90 shadow-2xs w-full flex flex-col justify-center">
+            <span className="text-[10px] sm:text-[11px] uppercase font-black tracking-wider text-emerald-800 block">
               Ahorro Económico Estimado:
             </span>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight leading-none my-0.5">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-950 tracking-tight leading-none my-1">
               {result
                 ? moneda === 'USD'
                   ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)
                   : formatMoney(result.ventaja.ahorroMonto)
                 : '$ 0'}
             </div>
-            {result && (
-              <span className="text-[11px] text-emerald-700 block font-semibold">
-                {moneda === 'USD' ? (
-                  <>Equivale a <strong>{formatMoney(result.ventaja.ahorroMonto)}</strong></>
-                ) : (
-                  <>Equivale a <strong>~ {formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)}</strong></>
-                )}
-              </span>
-            )}
           </div>
+
         </div>
+
+        {/* Abajo centrado: Porcentaje de Ventaja */}
+        {result && (
+          <div className="mt-3.5 pt-2.5 border-t border-emerald-200/80 flex items-center justify-center">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-emerald-800 font-black text-xs sm:text-sm border border-emerald-300 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              +{result.ventaja.porcentajeVentaja.toFixed(2)}% de ventaja
+            </span>
+          </div>
+        )}
 
       </div>
     </div>
@@ -1258,21 +1244,28 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           {/* 1. Tarjeta Hero de Ahorro Rápido en Vivo */}
           <div 
             onClick={() => setMobileTab("beneficio")}
-            className="bg-emerald-50/95 text-gray-900 p-3.5 rounded-2xl border-2 border-emerald-500/70 shadow-xs cursor-pointer active:scale-[0.99] transition-all"
+            className="bg-emerald-50/95 text-gray-900 p-3 sm:p-3.5 rounded-2xl border-2 border-emerald-500/70 shadow-xs cursor-pointer active:scale-[0.99] transition-all"
           >
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 pr-2">
-                <span className="text-[10px] uppercase font-extrabold tracking-wider text-emerald-800 block leading-tight">
+            <div className="flex items-center justify-between gap-2.5">
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-emerald-800 block leading-tight mb-1">
                   Ahorro al Productor:
                 </span>
-                <div className="text-sm sm:text-base font-black text-gray-900 leading-tight truncate">
+                <div className="bg-white px-2.5 py-1 sm:py-1.5 rounded-xl border border-emerald-300/80 shadow-2xs inline-flex items-baseline gap-1.5 max-w-full truncate">
                   {result ? (
-                    <>Ahorrás <span className="text-emerald-700 underline decoration-emerald-500">{formatTn(result.ventaja.ahorroToneladas)}</span></>
-                  ) : "Ingresá monto a canjear"}
+                    <>
+                      <span className="text-xs font-bold text-gray-600">Ahorrás:</span>
+                      <span className="text-sm sm:text-base font-black text-emerald-700 leading-tight">
+                        {formatTn(result.ventaja.ahorroToneladas)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-bold text-gray-600">Ingresá monto a canjear</span>
+                  )}
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <div className="text-sm sm:text-base font-black text-emerald-950">
+              <div className="text-right shrink-0 bg-white px-3 py-1.5 rounded-xl border border-emerald-300/80 shadow-2xs">
+                <div className="text-sm sm:text-base font-black text-emerald-950 leading-tight">
                   {result ? (moneda === "USD" ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra) : formatMoney(result.ventaja.ahorroMonto)) : "$ 0"}
                 </div>
                 {result && (
