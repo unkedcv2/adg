@@ -472,10 +472,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   // FUNCIONES DE RENDERIZADO MODULARES PARA VISTA DESKTOP Y EXPERIENCIA MOBILE
   // =========================================================================
   const renderParametrosCard = (isMobile = false) => (
-    <div className="rounded-2xl bg-slate-50 text-gray-900 p-4 sm:p-5 shadow-xs flex flex-col justify-between border border-gray-300 h-full">
+    <div className="rounded-2xl bg-slate-50 text-gray-900 p-3.5 sm:p-4 shadow-xs flex flex-col justify-between border border-gray-300 h-full">
       <div>
         {/* Título de Parámetros */}
-        <div className="border-b border-gray-200 pb-2.5 mb-3 flex items-center justify-between">
+        <div className="border-b border-gray-200 pb-2 mb-2.5 flex items-center justify-between">
           <div>
             <h2 className="text-lg sm:text-xl font-black tracking-tight text-gray-900">
               Parámetros
@@ -500,38 +500,6 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           </div>
         )}
 
-        {/* Selector de Moneda: ARS vs USD */}
-        <div className="bg-white p-1 rounded-xl border border-gray-200 mb-3 flex items-center justify-between shadow-2xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-700 pl-1.5 flex items-center space-x-1">
-            <DollarSign className="w-3.5 h-3.5 text-brand-gold-dark" />
-            <span>Moneda:</span>
-          </span>
-          <div className="flex items-center space-x-1">
-            <button
-              type="button"
-              onClick={() => handleToggleMoneda('ARS')}
-              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                moneda === 'ARS'
-                  ? 'bg-brand-gold text-slate-950 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              Pesos
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleMoneda('USD')}
-              className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                moneda === 'USD'
-                  ? 'bg-brand-gold text-slate-950 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              Dólar
-            </button>
-          </div>
-        </div>
-
         {/* Controles del Formulario */}
         <div className="space-y-3">
           
@@ -539,29 +507,57 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           <div>
             <label htmlFor="param-monto-canjear" className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 flex items-center justify-between">
               <span>
-                Monto a Canjear ({moneda === 'USD' ? 'USD' : '$ ARS'}) <span className="text-brand-gold-dark font-bold">*</span>
+                Monto a Canjear <span className="text-brand-gold-dark font-bold">*</span>
               </span>
               {(montoACanjear === '' || montoACanjear <= 0) && (
                 <span className="text-[10px] text-amber-600 font-medium normal-case">Obligatorio</span>
               )}
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-extrabold text-sm pointer-events-none">
-                {moneda === 'USD' ? 'USD' : '$'}
-              </span>
-              <input
-                id="param-monto-canjear"
-                type="text"
-                inputMode="decimal"
-                value={montoStr}
-                onChange={handleMontoInputChange}
-                placeholder={moneda === 'USD' ? 'Ej: 50.000' : 'Ej: 100.000.000'}
-                className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border border-gray-300 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold focus:outline-none shadow-2xs placeholder:text-gray-400 placeholder:font-normal`}
-                required
-              />
+            <div className="flex gap-1.5">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-extrabold text-sm pointer-events-none">
+                  {moneda === 'USD' ? 'USD' : '$'}
+                </span>
+                <input
+                  id="param-monto-canjear"
+                  type="text"
+                  inputMode="decimal"
+                  value={montoStr}
+                  onChange={handleMontoInputChange}
+                  placeholder={moneda === 'USD' ? 'Ej: 50.000' : 'Ej: 100.000.000'}
+                  className={`w-full ${moneda === 'USD' ? 'pl-14' : 'pl-8'} pr-3 py-2 bg-white text-gray-900 rounded-lg text-sm sm:text-base font-extrabold border border-gray-300 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold focus:outline-none shadow-2xs placeholder:text-gray-400 placeholder:font-normal`}
+                  required
+                />
+              </div>
+
+              {/* Botones de moneda integrados */}
+              <div className="flex bg-white p-1 rounded-lg border border-gray-300 shadow-2xs shrink-0 select-none">
+                <button
+                  type="button"
+                  onClick={() => handleToggleMoneda('ARS')}
+                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-black transition-all cursor-pointer ${
+                    moneda === 'ARS'
+                      ? 'bg-brand-gold text-slate-950 shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  $
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMoneda('USD')}
+                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-black transition-all cursor-pointer ${
+                    moneda === 'USD'
+                      ? 'bg-brand-gold text-slate-950 shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  U$S
+                </button>
+              </div>
             </div>
             {montoCalculadoARS > 0 && (
-              <p className="text-[10.5px] text-gray-500 mt-0.5">
+              <p className="text-[10.5px] text-gray-500 mt-1">
                 {moneda === 'USD' ? (
                   <>Equivale a <strong>{formatMoney(montoCalculadoARS)}</strong> al Dólar BNA Divisa Compra (${config.dolarBNA.compra})</>
                 ) : (
@@ -669,22 +665,6 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
             </select>
           </div>
 
-          {/* Recuadro de notas aclaratorias */}
-          <div className="mt-3 p-3 bg-white rounded-xl border border-gray-200 text-[11px] text-gray-600 space-y-2 leading-relaxed shadow-2xs">
-            <p className="flex items-start gap-1.5">
-              <span className="text-brand-gold-dark font-black">•</span>
-              <span>Cotización con precio pizarra del día. Ajustable a condiciones comerciales de cooperativa o acopio.</span>
-            </p>
-            <p className="flex items-start gap-1.5">
-              <span className="text-brand-gold-dark font-black">•</span>
-              <span>La simulación no contempla condiciones comerciales de acopio o cooperativa y es a modo de referencia.</span>
-            </p>
-            <p className="flex items-start gap-1.5">
-              <span className="text-brand-gold-dark font-black">•</span>
-              <span>El productor obtiene un ahorro del 1,2% correspondiente al impuesto al débito y crédito bancario, el cual no se encuentra reflejado en la simulación.</span>
-            </p>
-          </div>
-
         </div>
       </div>
 
@@ -713,37 +693,30 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   );
 
   const renderCanjeCard = (isMobile = false) => (
-    <div className="rounded-2xl bg-gradient-to-br from-[#072a16] to-[#044524] text-white p-4 sm:p-5 shadow-lg border-2 border-brand-green-light flex flex-col justify-between h-full relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-gold" />
+    <div className="rounded-2xl bg-emerald-50/95 text-slate-800 p-3.5 sm:p-4 shadow-lg border-2 border-emerald-400 flex flex-col justify-between h-full relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-green" />
 
       <div className="flex-1 flex flex-col justify-between">
         <div>
           {/* Header Columna 2 */}
-          <div className="border-b border-emerald-700/60 pb-3 mb-3 flex items-center justify-between">
+          <div className="border-b border-emerald-200 pb-2 mb-2.5 flex items-center justify-between">
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white leading-tight">
+              <h2 className="text-lg sm:text-xl font-black text-emerald-950 leading-tight">
                 Liquidación Canje ADG
               </h2>
-            </div>
-            <div className="shrink-0 flex items-center justify-center pl-2" title="ADG Almacén de Granos">
-              <img 
-                src={adgLogoBlanco} 
-                alt="ADG Logo" 
-                className="h-6 sm:h-7 w-auto object-contain drop-shadow-xs" 
-              />
             </div>
           </div>
 
           {/* Filas de conceptos de Canje: Etiquetas libres a la izquierda, Importes en recuadros alineados */}
           <div className="space-y-2.5 sm:space-y-3">
             
-            {/* 1. Precio Cereal */}
+            {/* 1. Precio Cereal/Tn: */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                Precio ({moneda === 'USD' ? 'USD/Tn' : '$/Tn'}):
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-900">
+                Precio Cereal/Tn:
               </span>
               <div className="flex items-center space-x-2 shrink-0">
-                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-emerald-200 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
                   <span className="text-sm sm:text-base font-black text-gray-800 leading-tight">
                     {result
                       ? moneda === 'USD'
@@ -762,43 +735,57 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               </div>
             </div>
 
-            {/* 2. Retención IVA */}
+            {/* 2. IVA Liquidación Canje (10.5%): */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                Ret. IVA (0%):
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-900">
+                IVA Liquidación Canje (10.5%):
               </span>
               <div className="flex items-center space-x-2 shrink-0">
-                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                  <span className="text-sm sm:text-base font-black text-emerald-700">
-                    $ 0,00 (0%)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Retención Ganancias */}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                Ret. Ganancias (0%):
-              </span>
-              <div className="flex items-center space-x-2 shrink-0">
-                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                  <span className="text-sm sm:text-base font-black text-emerald-700">
-                    $ 0,00 (0%)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. IVA Cereal (+10.5%) */}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-[13px] font-semibold text-emerald-100">
-                IVA Cereal (+10.5%):
-              </span>
-              <div className="flex items-center space-x-2 shrink-0">
-                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-white/20 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-emerald-200 shadow-2xs text-right w-[130px] sm:w-[155px]">
                   <span className="text-sm sm:text-base font-black text-emerald-700">
                     + {result ? formatMoneyPrecise(result.canje.ivaCereal) : formatMoneyPrecise(Number(precioPorTonelada || 0) * 0.105)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Retenciones de IVA: */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-900">
+                Retenciones de IVA:
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-emerald-200 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-emerald-700">
+                    {result ? formatMoneyPrecise(result.canje.retencionIva) : '$ 0,00'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Retenciones de Ganancias: */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-900">
+                Retenciones de Ganancias:
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-emerald-200 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-emerald-700">
+                    {result ? formatMoneyPrecise(result.canje.retencionGanancias) : '$ 0,00'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Gastos y Sellados: */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-emerald-900">
+                Gastos y Sellados:
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-emerald-200 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-emerald-700">
+                    {result ? formatMoneyPrecise(result.canje.comision + result.canje.ivaComision + result.canje.sellado + result.canje.percepcionIibb) : '—'}
                   </span>
                 </div>
               </div>
@@ -807,29 +794,29 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           </div>
         </div>
 
-        {/* Sección inferior: Monto Final Disponible (TODO ENCUADRADO) + Total Toneladas */}
-        <div className="pt-3 mt-3 border-t border-emerald-700/60 space-y-2.5">
+        {/* Sección inferior: Precio Final Cereal / Tn + Total Toneladas */}
+        <div className="pt-2 sm:pt-2.5 mt-2 sm:mt-2.5 border-t border-emerald-200/60 space-y-2">
           
-          {/* Monto Final Disponible por Tn: TODO ENCUADRADO */}
-          <div className="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/20 shadow-xs flex items-center justify-between">
-            <span className="text-xs sm:text-sm font-extrabold text-white">
-              Monto Final Disponible / Tn:
+          {/* Precio Final Cereal / Tn: */}
+          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-xl border-2 border-emerald-300 shadow-xs flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-extrabold text-emerald-950">
+              Precio Final Cereal / Tn:
             </span>
-            <span className="text-base sm:text-lg font-black text-brand-gold-light">
+            <span className="text-base sm:text-lg font-black text-emerald-700">
               {result ? formatMoneyPrecise(result.canje.montoFinalPorTonelada) : '—'}
             </span>
           </div>
 
           {/* Total Toneladas a Entregar Box */}
-          <div className="bg-white rounded-xl p-3 text-center shadow-xs border-2 border-brand-gold">
-            <span className="text-[11px] uppercase font-extrabold tracking-wider text-brand-green-dark block mb-0.5">
+          <div className="bg-white rounded-xl py-2 px-3 text-center shadow-xs border-2 border-brand-green">
+            <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold tracking-wider text-brand-green-dark block leading-tight">
               Total Toneladas a Entregar:
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-brand-green-dark block leading-tight py-0.5">
+            <span className="text-xl sm:text-2xl font-black text-brand-green block leading-tight py-0.5">
               {result ? formatTn(result.canje.toneladasNecesarias) : '-- Tn'}
             </span>
             {!result && (
-              <span className="text-[10.5px] text-emerald-800 font-semibold block">
+              <span className="text-[10px] text-emerald-800 font-semibold block">
                 Ingresá el monto de la operación para calcular
               </span>
             )}
@@ -840,11 +827,11 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
       {/* Botones de navegación en mobile */}
       {isMobile && (
-        <div className="pt-3 mt-3 border-t border-emerald-700/60 flex items-center justify-between gap-2 text-xs">
+        <div className="pt-3 mt-3 border-t border-emerald-200/80 flex items-center justify-between gap-2 text-xs">
           <button
             type="button"
             onClick={() => setMobileTab('normal')}
-            className="flex-1 bg-white/15 hover:bg-white/25 text-white py-2.5 px-3 rounded-xl font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+            className="flex-1 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-900 py-2.5 px-3 rounded-xl font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
           >
             <span>Ver Venta Normal</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -852,7 +839,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           <button
             type="button"
             onClick={() => setMobileTab('beneficio')}
-            className="bg-brand-gold text-slate-950 py-2.5 px-3 rounded-xl font-black transition-all cursor-pointer"
+            className="bg-brand-green text-white py-2.5 px-3 rounded-xl font-black transition-all cursor-pointer"
           >
             Ver Ahorro
           </button>
@@ -862,13 +849,13 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   );
 
   const renderVentaNormalCard = (isMobile = false) => (
-    <div className="rounded-2xl bg-slate-200/95 p-4 sm:p-5 shadow-md border border-slate-300 flex flex-col justify-between h-full relative overflow-hidden">
+    <div className="rounded-2xl bg-slate-200/95 p-3.5 sm:p-4 shadow-md border border-slate-300 flex flex-col justify-between h-full relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-400" />
 
       <div className="flex-1 flex flex-col justify-between">
         <div>
           {/* Header Columna 3 */}
-          <div className="border-b border-slate-300 pb-3 mb-3 flex items-center justify-between">
+          <div className="border-b border-slate-300 pb-2 mb-2.5 flex items-center justify-between">
             <div>
               <h2 className="text-lg sm:text-xl font-black text-slate-800 leading-tight">
                 Liquidación Normal
@@ -879,10 +866,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           {/* Filas de conceptos de Venta Normal: Etiquetas libres a la izquierda, Importes en recuadros alineados */}
           <div className="space-y-2.5 sm:space-y-3">
             
-            {/* Precio Cereal */}
+            {/* 1. Precio Cereal/Tn: */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                Precio ({moneda === 'USD' ? 'USD/Tn' : '$/Tn'}):
+                Precio Cereal/Tn:
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px] flex flex-col justify-center">
@@ -904,10 +891,24 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               </div>
             </div>
 
-            {/* Retención IVA SISA */}
+            {/* 2. IVA Liquidación Canje (10.5%): */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                Ret. IVA ({selectedSisaId === 1 ? '5%' : selectedSisaId === 2 ? '7%' : '8%'}):
+                IVA Liquidación Canje (10.5%):
+              </span>
+              <div className="flex items-center space-x-2 shrink-0">
+                <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
+                  <span className="text-sm sm:text-base font-black text-slate-800">
+                    + {result ? formatMoneyPrecise(result.ventaNormal.ivaCereal) : formatMoneyPrecise(Number(precioPorTonelada || 0) * 0.105)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Retenciones de IVA: */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
+                Retenciones de IVA:
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
@@ -918,10 +919,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               </div>
             </div>
 
-            {/* Retención Ganancias SISA */}
+            {/* 4. Retenciones de Ganancias: */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                Ret. Ganancias ({selectedSisaId === 1 ? '0%' : selectedSisaId === 2 ? '2%' : '15%'}):
+                Retenciones de Ganancias:
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
@@ -932,15 +933,15 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               </div>
             </div>
 
-            {/* Depósito CBU IVA */}
+            {/* 5. Gastos y Sellados: */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-semibold text-slate-700">
-                Dep. CBU IVA:
+                Gastos y Sellados:
               </span>
               <div className="flex items-center space-x-2 shrink-0">
                 <div className="bg-white px-3 py-1.5 sm:py-2 rounded-lg border border-slate-300 shadow-2xs text-right w-[130px] sm:w-[155px]">
-                  <span className="text-sm sm:text-base font-black text-amber-700">
-                    {result ? formatMoneyPrecise(result.ventaNormal.depCbuIva) : '—'}
+                  <span className="text-sm sm:text-base font-black text-rose-600">
+                    {result ? formatMoneyPrecise(result.ventaNormal.comision + result.ventaNormal.ivaComision + result.ventaNormal.sellado + result.ventaNormal.percepcionIibb + result.ventaNormal.depCbuIva) : '—'}
                   </span>
                 </div>
               </div>
@@ -949,13 +950,13 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           </div>
         </div>
 
-        {/* Sección inferior: Monto Final Disponible (TODO ENCUADRADO) + Total Toneladas */}
-        <div className="pt-3 mt-3 border-t border-slate-300 space-y-2.5">
+        {/* Sección inferior: Precio Final Cereal / Tn + Total Toneladas */}
+        <div className="pt-2 sm:pt-2.5 mt-2 sm:mt-2.5 border-t border-slate-300 space-y-2">
           
-          {/* Monto Final Disponible por Tn: TODO ENCUADRADO */}
-          <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-xs flex items-center justify-between">
+          {/* Precio Final Cereal / Tn: */}
+          <div className="bg-white px-3 py-1.5 sm:py-2 rounded-xl border-2 border-slate-300 shadow-xs flex items-center justify-between">
             <span className="text-xs sm:text-sm font-extrabold text-slate-700">
-              Monto Final Disponible / Tn:
+              Precio Final Cereal / Tn:
             </span>
             <span className="text-base sm:text-lg font-black text-slate-900">
               {result ? formatMoneyPrecise(result.ventaNormal.montoFinalPorTonelada) : '—'}
@@ -963,15 +964,15 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
           </div>
 
           {/* Total Toneladas a Entregar Box */}
-          <div className="bg-white border-2 border-slate-400 rounded-xl p-3 text-center shadow-xs">
-            <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-600 block mb-0.5">
+          <div className="bg-white border-2 border-slate-400 rounded-xl py-2 px-3 text-center shadow-xs">
+            <span className="text-[10px] sm:text-[10.5px] uppercase font-extrabold tracking-wider text-slate-600 block leading-tight">
               Total Toneladas a Entregar:
             </span>
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 block leading-tight py-0.5">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 block leading-tight py-0.5">
               {result ? formatTn(result.ventaNormal.toneladasNecesarias) : '-- Tn'}
             </span>
             {!result && (
-              <span className="text-[10.5px] text-rose-600 font-semibold block">
+              <span className="text-[10px] text-rose-600 font-semibold block">
                 Cargá los parámetros para calcular
               </span>
             )}
@@ -1006,32 +1007,32 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
   const renderBeneficioCard = (isMobile = false) => (
     <div 
       id="resumen-beneficio-productor-card"
-      className="rounded-2xl bg-emerald-50/90 text-gray-900 p-4 sm:p-5 shadow-xs border-2 border-emerald-500/80 relative overflow-hidden"
+      className="rounded-2xl bg-gradient-to-br from-[#072a16] to-[#044524] text-white p-2.5 sm:p-3 shadow-md border-2 border-emerald-800 relative overflow-hidden"
     >
       {/* Brillo sutil de fondo muy tenue */}
-      <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-200/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-700/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10">
         
         {/* Fila principal con recuadros idénticos en ancho, estructura y tamaño de valor */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-2.5">
           
           {/* Lado Izquierdo: Ahorro en Toneladas */}
-          <div className="bg-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl border border-emerald-300/90 shadow-2xs w-full flex flex-col justify-center">
-            <span className="text-[10px] sm:text-[11px] uppercase font-black tracking-wider text-emerald-800 block">
+          <div className="bg-white px-3 sm:px-4 py-2 rounded-xl border border-emerald-100 shadow-2xs w-full flex flex-col justify-center">
+            <span className="text-[9.5px] sm:text-[10px] uppercase font-black tracking-wider text-emerald-800 block leading-tight">
               Ahorrás:
             </span>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-950 tracking-tight leading-none my-1">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none my-0.5">
               {result ? formatTn(result.ventaja.ahorroToneladas) : '0,00 Tn'}
             </div>
           </div>
 
           {/* Lado Derecho: Ahorro Económico Estimado */}
-          <div className="bg-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl border border-emerald-300/90 shadow-2xs w-full flex flex-col justify-center">
-            <span className="text-[10px] sm:text-[11px] uppercase font-black tracking-wider text-emerald-800 block">
+          <div className="bg-white px-3 sm:px-4 py-2 rounded-xl border border-emerald-100 shadow-2xs w-full flex flex-col justify-center">
+            <span className="text-[9.5px] sm:text-[10px] uppercase font-black tracking-wider text-emerald-800 block leading-tight">
               Ahorro Económico Estimado:
             </span>
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-950 tracking-tight leading-none my-1">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-950 tracking-tight leading-none my-0.5">
               {result
                 ? moneda === 'USD'
                   ? formatUSD(result.ventaja.ahorroMonto / config.dolarBNA.compra)
@@ -1044,9 +1045,9 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
 
         {/* Abajo centrado: Porcentaje de Ventaja */}
         {result && (
-          <div className="mt-3.5 pt-2.5 border-t border-emerald-200/80 flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-emerald-800 font-black text-xs sm:text-sm border border-emerald-300 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <div className="mt-1.5 pt-1.5 border-t border-emerald-800/40 flex items-center justify-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white text-emerald-800 font-black text-[11px] sm:text-xs border border-emerald-100 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               +{result.ventaja.porcentajeVentaja.toFixed(2)}% de ventaja
             </span>
           </div>
@@ -1075,10 +1076,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
       {/* HEADER PRINCIPAL: Marca ADG a la izquierda y Dólar BNA derecha*/}
       {/* ============================================================ */}
       <header id="simulator-header" className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-1.5 sm:py-2 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Logo ADG + Línea divisoria finita + Título Simulador de Canje de Granos */}
-          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <a 
               href="#" 
               onClick={(e) => {
@@ -1094,16 +1095,16 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               title="ADG - Almacén de Granos"
             >
               <div className="sm:hidden">
-                <Logo lightBg={true} height={32} />
+                <Logo lightBg={true} height={26} />
               </div>
               <div className="hidden sm:block">
-                <Logo lightBg={true} height={42} />
+                <Logo lightBg={true} height={32} />
               </div>
             </a>
 
-            <div className="h-5 sm:h-7 w-px bg-gray-200 shrink-0" />
+            <div className="h-4 sm:h-5 w-px bg-gray-200 shrink-0" />
 
-            <h1 className="text-xs sm:text-base md:text-lg font-black text-gray-800 tracking-tight truncate">
+            <h1 className="text-xs sm:text-sm md:text-base font-black text-gray-800 tracking-tight truncate">
               <span className="sm:hidden">Simulador Canje</span>
               <span className="hidden sm:inline">Simulador de Canje de Granos</span>
             </h1>
@@ -1143,21 +1144,21 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
         </div>
 
         {/* Barra de Pizarras: Selector de Plaza a la izquierda y 3 Granos ocupando todo el ancho */}
-        <div id="simulator-ticker" className="bg-slate-50/90 border-t border-gray-200/80 py-2.5 sm:py-3">
+        <div id="simulator-ticker" className="bg-slate-50/90 border-t border-gray-200/80 py-1 sm:py-1.5">
           <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 sm:gap-4 w-full">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 sm:gap-3 w-full">
               
               {/* Selector de Plaza de Referencia: Pizarras Rosario / Bahía Blanca */}
-              <div className="flex items-center gap-2.5 shrink-0">
-                <span className="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5 select-none">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1 select-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   Pizarras:
                 </span>
-                <div id="selector-plaza-mercado" className="flex items-center bg-gray-200/70 p-1 rounded-xl border border-gray-200 text-xs">
+                <div id="selector-plaza-mercado" className="flex items-center bg-gray-200/70 p-0.5 rounded-lg border border-gray-200 text-[11px]">
                   <button
                     type="button"
                     onClick={() => handleTogglePlaza('rosario')}
-                    className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
+                    className={`px-2 py-1 rounded-md font-black transition-all cursor-pointer ${
                       plaza === 'rosario'
                         ? 'bg-brand-green text-white shadow-xs'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1168,7 +1169,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                   <button
                     type="button"
                     onClick={() => handleTogglePlaza('bahia_blanca')}
-                    className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
+                    className={`px-2 py-1 rounded-md font-black transition-all cursor-pointer ${
                       plaza === 'bahia_blanca'
                         ? 'bg-brand-green text-white shadow-xs'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1180,10 +1181,10 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
               </div>
 
               {/* Separador vertical para pantallas medianas/grandes */}
-              <div className="hidden md:block h-9 w-px bg-gray-200 shrink-0" />
+              <div className="hidden md:block h-6 w-px bg-gray-200 shrink-0" />
 
               {/* Los 3 Granos Principales distribuidos en Grid para ocupar todo el ancho disponible */}
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 flex-grow w-full">
+              <div className="grid grid-cols-3 gap-1 sm:gap-2 flex-grow w-full">
                 {topGrains.map((grain) => {
                   const isSelected = grain.id === selectedGrainId;
                   const grainPriceARS = plaza === 'bahia_blanca' ? grain.prices.bahiaARS : grain.prices.rosarioARS;
@@ -1192,29 +1193,29 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
                     <button
                       key={grain.id}
                       onClick={() => handleSelectGrain(grain.id)}
-                      className={`group flex flex-col sm:flex-row items-center justify-center sm:justify-between px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-[0.98] w-full text-center sm:text-left ${
+                      className={`group flex flex-col sm:flex-row items-center justify-center sm:justify-between px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border transition-all cursor-pointer shadow-2xs active:scale-[0.98] w-full text-center sm:text-left ${
                         isSelected
-                          ? 'bg-brand-green text-white border-brand-green shadow-md ring-2 ring-brand-green/30'
+                          ? 'bg-brand-green text-white border-brand-green shadow-xs ring-1 ring-brand-green/30'
                           : 'bg-white text-gray-800 border-gray-200 hover:border-brand-green/50 hover:bg-emerald-50/40'
                       }`}
                     >
                       {/* Lado izquierdo: Ícono + Nombre del grano */}
-                      <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
+                      <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
                         <div className={`shrink-0 transition-transform group-hover:scale-105 flex items-center justify-center ${
                           isSelected 
                             ? 'text-brand-gold-light' 
                             : 'text-brand-green'
                         }`}>
-                          <GrainIcon type={grain.id} className="w-5 h-5 sm:w-11 sm:h-11" strokeWidth={1.8} />
+                          <GrainIcon type={grain.id} className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={1.8} />
                         </div>
                         
-                        <span className="font-black uppercase text-[11px] sm:text-base tracking-tight sm:tracking-wide truncate">
+                        <span className="font-black uppercase text-[10px] sm:text-sm tracking-tight sm:tracking-wide truncate">
                           {grain.shortName}
                         </span>
                       </div>
                       
                       {/* Lado derecho: Precio del grano */}
-                      <span className={`text-[10.5px] sm:text-base font-black shrink-0 sm:pl-2 ${
+                      <span className={`text-[9.5px] sm:text-sm font-black shrink-0 sm:pl-1 ${
                         isSelected ? 'text-brand-gold-light' : 'text-brand-green'
                       }`}>
                         {moneda === 'USD'
@@ -1234,7 +1235,7 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
       {/* ============================================================ */}
       {/* CONTENIDO PRINCIPAL: Simulador de Canje vs Venta Tradicional  */}
       {/* ============================================================ */}
-      <main className="relative z-10 flex-grow max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-8 sm:pb-10">
+      <main className="relative z-10 flex-grow max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 pt-3.5 sm:pt-4.5 pb-4 sm:pb-5">
         
         {/* ======================================================== */}
         {/* VISTA MOBILE DEDICADA: Experiencia tipo App (< lg)        */}
@@ -1338,17 +1339,24 @@ export default function CanjeSimulator({ onBackToLanding }: CanjeSimulatorProps)
         {/* ======================================================== */}
         {/* VISTA DESKTOP: Tablero Completo de 3 Columnas (>= lg)    */}
         {/* ======================================================== */}
-        <div className="hidden lg:grid lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+        <div className="hidden lg:grid lg:grid-cols-12 gap-3 sm:gap-3.5 items-stretch">
           <div className="lg:col-span-4">
             {renderParametrosCard(false)}
           </div>
-          <div className="lg:col-span-8 flex flex-col justify-between gap-4 h-full">
-            <div className="grid grid-cols-2 gap-4 items-stretch flex-1">
+          <div className="lg:col-span-8 flex flex-col justify-between gap-2.5 sm:gap-3 h-full">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 items-stretch flex-1">
               {renderCanjeCard(false)}
               {renderVentaNormalCard(false)}
             </div>
             {renderBeneficioCard(false)}
           </div>
+        </div>
+
+        {/* Texto Aclaratorio Unificado */}
+        <div className="mt-2.5 sm:mt-3 text-left w-full px-1">
+          <p className="text-[10.5px] sm:text-[11px] text-slate-500 leading-relaxed font-bold">
+            Cotización con precio pizarra del día. Ajustable a condiciones comerciales. El productor obtiene un ahorro del 1,2% correspondiente al impuesto al débito y crédito bancario, el cual no se encuentra reflejado en la simulación. Mercadería puesta en destino a cargo del productor. Gastos de entrega no contemplados en la simulación.
+          </p>
         </div>
 
       </main>
